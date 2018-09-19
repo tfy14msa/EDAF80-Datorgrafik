@@ -106,7 +106,7 @@ int main()
 	earth_node.translate(earth_translate_vec);
 	glm::vec3 earth_scale_vec = glm::vec3(0.3, 0.3, 0.3);
 	earth_node.scale(earth_scale_vec);
-	solar_system_node.add_child(&earth_node);
+	//solar_system_node.add_child(&earth_node);
 	//solar_system_node.set_geometry(sphere);
 	//solar_system_node.set_translation(glm::vec3(1.0, 0.0, 2.0));
 
@@ -218,10 +218,36 @@ int main()
 		std::stack<glm::mat4> matrix_stack({ glm::mat4(1.0f) });
 		// TODO: Replace this explicit rendering of the Sun with a
 		// traversal of the scene graph and rendering of all its nodes.
-		sun_node.render(camera.GetWorldToClipMatrix(), sun_node.get_transform(), shader, [](GLuint /*program*/){});
-		earth_node.render(camera.GetWorldToClipMatrix(), earth_node.get_transform(), shader, [](GLuint /*program*/) {});
-		moon_node.render(camera.GetWorldToClipMatrix(), moon_node.get_transform(), shader, [](GLuint /*program*/) {});
-		venus_node.render(camera.GetWorldToClipMatrix(), venus_node.get_transform(), shader, [](GLuint /*program*/) {});
+		
+		Node const* current_node = &solar_system_node;
+		int nbrOfChildren = solar_system_node.get_children_nb();
+		while (!node_stack.empty()) {
+			if (current_node->get_children_nb() > 0){
+				for (int i = 0; i < current_node->get_children_nb(); i++) {
+					node_stack.push(current_node->get_child(i));
+				}
+				current_node = node_stack.top();
+			}
+			else {
+			current_node->render(camera.GetWorldToClipMatrix(), current_node->get_transform());
+			node_stack.pop();
+			current_node = node_stack.top();
+			}
+		}
+			//kolla om child finns
+			// gå till child 
+			// kolla om child finns
+			//ingen finns, pusha objektet, gå upp ett steg
+
+			
+			
+		// 
+		
+		
+		//sun_node.render(camera.GetWorldToClipMatrix(), sun_node.get_transform(), shader, [](GLuint /*program*/){});
+		//earth_node.render(camera.GetWorldToClipMatrix(), earth_node.get_transform(), shader, [](GLuint /*program*/) {});
+		//moon_node.render(camera.GetWorldToClipMatrix(), moon_node.get_transform(), shader, [](GLuint /*program*/) {});
+		//venus_node.render(camera.GetWorldToClipMatrix(), venus_node.get_transform(), shader, [](GLuint /*program*/) {});
 		//solar_system_node.render(camera.GetWorldToClipMatrix(), solar_system_node.get_transform(), shader, [](GLuint /*program*/) {});
 
 		//
