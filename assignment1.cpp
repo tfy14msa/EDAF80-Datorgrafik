@@ -88,28 +88,40 @@ int main()
 	//
 	Node sun_node;
 	sun_node.set_geometry(sphere);
-	GLuint const sun_texture = bonobo::loadTexture2D("Polar Bear.png");
+	GLuint const sun_texture = bonobo::loadTexture2D("sunmap.png");
 	sun_node.add_texture("diffuse", sun_texture, GL_TEXTURE_2D);
-	float const sun_spin_speed = glm::two_pi<float>() / 20.0f; // Full rotation in 20 seconds
+	float const sun_spin_speed = glm::two_pi<float>() / 000020.0f; // Full rotation in 20 seconds
 
 
 	Node solar_system_node;
 	solar_system_node.add_child(&sun_node);
 	float const solar_system_spin_speed = glm::two_pi<float>() / 50.0f; // Full rotation in 50 seconds
 
-	Node earth_node;
-	earth_node.set_geometry(sphere);
-	GLuint const earth_texture = bonobo::loadTexture2D("earthmap1k.png");
-	earth_node.add_texture("diffuse_texture", earth_texture, GL_TEXTURE_2D);
-	float const earth_spin_speed = glm::two_pi<float>() / 6.0f; // Full rotation in six seconds
-	glm::vec3 earth_translate_vec = glm::vec3(3.0, 1.0, 1.0);
-	earth_node.translate(earth_translate_vec);
-	glm::vec3 earth_scale_vec = glm::vec3(0.3, 0.3, 0.3);
-	earth_node.scale(earth_scale_vec);
-	//solar_system_node.add_child(&earth_node);
+	Node earth_pivot;
+	solar_system_node.add_child(&earth_pivot);
+
+	
+	
 	//solar_system_node.set_geometry(sphere);
 	//solar_system_node.set_translation(glm::vec3(1.0, 0.0, 2.0));
 
+	Node earth_translation;
+	glm::vec3 earth_translate_vec = glm::vec3(3.0, 1.0, 1.0);
+	earth_translation.translate(earth_translate_vec);
+	earth_pivot.add_child(&earth_translation);
+
+	Node earth_spin;
+	earth_spin.set_geometry(sphere);
+	GLuint const earth_texture = bonobo::loadTexture2D("earthmap1k.png");
+	earth_spin.add_texture("diffuse_texture", earth_texture, GL_TEXTURE_2D);
+	float const earth_spin_speed = glm::two_pi<float>() / 6.0f; // Full rotation in six seconds
+
+	glm::vec3 earth_scale_vec = glm::vec3(0.3, 0.3, 0.3);
+	earth_spin.scale(earth_scale_vec);
+	earth_translation.add_child(&earth_spin);
+
+	Node moon_pivot;
+	earth_translation.add_child(&moon_pivot);
 
 	Node moon_node;
 	moon_node.set_geometry(sphere);
@@ -117,10 +129,12 @@ int main()
 	moon_node.add_texture("diffuse_texture", moon_texture, GL_TEXTURE_2D);
 	float const moon_spin_speed = earth_spin_speed;
 	//moon_node.set_translation(earth_node.get_translation + glm::vec3(0.1, 0.1, 0.1));
-	moon_node.translate(earth_translate_vec + glm::vec3(0.3, 0.2, 0.2));
+	//moon_node.translate(glm::vec3(0.3, 0.2, 0.2));
+	moon_node.translate(glm::vec3(0.3, 0.2, 0.2));
 	moon_node.scale(earth_scale_vec * glm::float32(0.27));
-	earth_node.add_child(&moon_node);
+	moon_pivot.add_child(&moon_node);
 	
+
 	
 	Node venus_node;
 	venus_node.set_geometry(sphere);
@@ -128,10 +142,13 @@ int main()
 	venus_node.add_texture("diffuse_texture", venus_texture, GL_TEXTURE_2D);
 	float const venus_spin_speed = -earth_spin_speed/243; // https://www.space.com/18530-how-big-is-venus.html
 	//glm::vec3 earth_translate_vec = glm::vec3(3.0, 1.0, 1.0);
-	//earth_node.translate(earth_translate_vec);
+	venus_node.translate(glm::vec3(2.0, -1.5, 1.0));
+
+	Node venus_pivot;
+	solar_system_node.add_child(&venus_pivot);
 
 	venus_node.scale(glm::float32(0.95)*earth_scale_vec);
-	solar_system_node.add_child(&venus_node);
+	venus_pivot.add_child(&venus_node);
 	
 	
 	
@@ -201,12 +218,13 @@ int main()
 		// Update the transforms
 		//
 		sun_node.rotate_y(sun_spin_speed * delta_time);
-		earth_node.rotate_y(earth_spin_speed * delta_time);
-		earth_translate_vec = glm::vec3(3.0 * std::sin(nowTime/2.0), std::sin(nowTime/2.0), 3.0 * std::cos(nowTime/2.0));
-		earth_node.set_translation(earth_translate_vec);
-		moon_node.set_translation(earth_translate_vec + glm::vec3( 0.4 *std::sin(4.0*nowTime), 0.2*std::sin(4.0*nowTime), 0.4*std::cos(4.0*nowTime)));
+		earth_spin.rotate_y(earth_spin_speed * delta_time);
+		//earth_translate_vec = glm::vec3(3.0 * std::sin(nowTime/2.0), std::sin(nowTime/2.0), 3.0 * std::cos(nowTime/2.0));
+		//earth_node.set_translation(earth_translate_vec);
+		//moon_node.set_translation(glm::vec3( 0.4 *std::sin(4.0*nowTime), 0.2*std::sin(4.0*nowTime), 0.4*std::cos(4.0*nowTime)));
 		moon_node.rotate_y(moon_spin_speed*delta_time);
-		venus_node.set_translation(glm::vec3((107.0 / 149.6)*3.0*std::sin(nowTime*0.615/2.0), -0.3*std::sin(nowTime*0.615), (107.0 / 149.6)*3.0*std::cos(nowTime*0.615/2.0)));
+		moon_pivot.rotate_y(glm::two_pi<float>() / 50.0f*delta_time);
+		//venus_node.set_translation(glm::vec3((107.0 / 149.6)*3.0*std::sin(nowTime*0.615/2.0), -0.3*std::sin(nowTime*0.615), (107.0 / 149.6)*3.0*std::cos(nowTime*0.615/2.0)));
 		//https://space-facts.com/venus/
 		venus_node.rotate_y(venus_spin_speed*delta_time);
 		solar_system_node.rotate_y(solar_system_spin_speed * delta_time);
@@ -220,19 +238,21 @@ int main()
 		// traversal of the scene graph and rendering of all its nodes.
 		
 		Node const* current_node = &solar_system_node;
-		int nbrOfChildren = solar_system_node.get_children_nb();
+		//int nbrOfChildren = solar_system_node.get_children_nb();
 		while (!node_stack.empty()) {
-			if (current_node->get_children_nb() > 0){
-				for (int i = 0; i < current_node->get_children_nb(); i++) {
-					node_stack.push(current_node->get_child(i));
-				}
-				current_node = node_stack.top();
-			}
-			else {
-			current_node->render(camera.GetWorldToClipMatrix(), current_node->get_transform());
-			node_stack.pop();
 			current_node = node_stack.top();
+			glm::mat4 matrix_stack_transform = matrix_stack.top()*current_node->get_transform();
+			
+			current_node->render(camera.GetWorldToClipMatrix(), matrix_stack_transform, shader, [](GLuint /*program*/) {});
+			node_stack.pop();
+			matrix_stack.pop();
+			
+			for (int i = 0; i < current_node->get_children_nb(); i++) {
+				Node const* child = current_node->get_child(i);
+				matrix_stack.push(matrix_stack_transform);
+				node_stack.push(child);
 			}
+		
 		}
 			//kolla om child finns
 			// gå till child 
