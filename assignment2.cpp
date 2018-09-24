@@ -57,7 +57,8 @@ void
 edaf80::Assignment2::run()
 {
 	// Load the sphere geometry
-	auto const shape = parametric_shapes::createCircleRing(4u, 60u, 1.0f, 2.0f);
+	//auto const shape = parametric_shapes::createCircleRing(4u, 60u, 1.0f, 2.0f);
+	auto const shape = parametric_shapes::createQuad(2u, 2u);
 	if (shape.vao == 0u)
 		return;
 
@@ -115,6 +116,7 @@ edaf80::Assignment2::run()
 	circle_rings.set_geometry(shape);
 	circle_rings.set_program(&fallback_shader, set_uniforms);
 
+	
 
 	//! \todo Create a tesselated sphere and a tesselated torus
 
