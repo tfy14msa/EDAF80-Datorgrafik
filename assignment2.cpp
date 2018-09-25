@@ -58,7 +58,8 @@ edaf80::Assignment2::run()
 {
 	// Load the sphere geometry
 	//auto const shape = parametric_shapes::createCircleRing(4u, 60u, 1.0f, 2.0f);
-	auto const shape = parametric_shapes::createQuad(2u, 2u);
+	//auto const shape = parametric_shapes::createQuad(2u, 2u);
+	auto const shape = parametric_shapes::createSphere(25u, 100u,2.0f);
 	if (shape.vao == 0u)
 		return;
 
@@ -104,6 +105,7 @@ edaf80::Assignment2::run()
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
 
+
 	// Set the default tensions value; it can always be changed at runtime
 	// through the "Scene Controls" window.
 	float catmull_rom_tension = 0.0f;
@@ -114,7 +116,9 @@ edaf80::Assignment2::run()
 
 	auto circle_rings = Node();
 	circle_rings.set_geometry(shape);
-	circle_rings.set_program(&fallback_shader, set_uniforms);
+	//GLuint const shape_texture = bonobo::loadTexture2D("earthmap1k.png");
+	//circle_rings.add_texture("diffuse_texture", shape_texture, GL_TEXTURE_2D);
+	circle_rings.set_program(&normal_shader, set_uniforms);
 
 	
 
