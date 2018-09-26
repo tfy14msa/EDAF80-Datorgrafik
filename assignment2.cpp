@@ -12,6 +12,7 @@
 #include "core/ShaderProgramManager.hpp"
 #include <imgui.h>
 #include "external/imgui_impl_glfw_gl3.h"
+#include <array>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -59,7 +60,7 @@ edaf80::Assignment2::run()
 	// Load the sphere geometry
 	//auto const shape = parametric_shapes::createCircleRing(4u, 60u, 1.0f, 2.0f);
 	//auto const shape = parametric_shapes::createQuad(2u, 2u);
-	auto const shape = parametric_shapes::createSphere(25u, 100u,2.0f);
+	auto const shape = parametric_shapes::createSphere(60u, 100u,1.0f);
 	if (shape.vao == 0u)
 		return;
 
@@ -143,6 +144,20 @@ edaf80::Assignment2::run()
 	bool show_logs = true;
 	bool show_gui = true;
 
+	auto const controlpoints = std::array<glm::vec3,10>{ 
+			glm::vec3(1.0f, 1.0f, 1.0f),
+			glm::vec3(1.0f, 2.0f, 1.0f),
+			glm::vec3(-1.0f, -1.0f, -1.0f),
+			glm::vec3(1.0f, -1.0f, 1.5f),
+			glm::vec3(0.73f, 0.73f, -4.0f),
+			glm::vec3(1.5f, 2.0f, 1.0f),
+			glm::vec3(0.0f, 0.0f, 1.0f),
+			glm::vec3(-1.0f, -1.0f, -1.0f),
+			glm::vec3(2.0f, -2.0f, 0.0f),
+			glm::vec3(-2.0, 2.0f, 2.0f)
+	};
+	unsigned int num_controlpoints = controlpoints.size();
+		unsigned int pathindex = 0;
 	while (!glfwWindowShouldClose(window)) {
 		nowTime = GetTimeSeconds();
 		ddeltatime = nowTime - lastTime;
@@ -199,7 +214,15 @@ edaf80::Assignment2::run()
 
 		//! \todo Interpolate the movement of a shape between various
 		//!        control points
+		float interpolationstep = 1.0f - (fpsNextTick - nowTime);
 
+
+		circle_rings.set_translation(interpolation::evalLERP(controlpoints[pathindex], controlpoints[(pathindex + 1) % num_controlpoints], interpolationstep));
+
+		pathindex += 1;
+		if (pathindex >= num_controlpoints) {
+			pathindex = 0;
+		}
 
 		int framebuffer_width, framebuffer_height;
 		glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);

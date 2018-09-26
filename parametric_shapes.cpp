@@ -163,7 +163,7 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 
 	auto vertices = std::vector<glm::vec3>(vertices_nb);
 	auto normals = std::vector<glm::vec3>(vertices_nb);
-	//auto texcoords = std::vector<glm::vec3>(vertices_nb);
+	auto texcoords = std::vector<glm::vec3>(vertices_nb);
 	auto tangents = std::vector<glm::vec3>(vertices_nb);
 	auto binormals = std::vector<glm::vec3>(vertices_nb);
 
@@ -179,7 +179,7 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 		float cos_theta = std::cos(theta),
 			sin_theta = std::sin(theta);
 
-
+		phi = 0.0f;
 		for (unsigned int j = 0u; j < res_phi; ++j) {
 			float cos_phi = std::cos(phi),
 				sin_phi = std::sin(phi);
@@ -199,16 +199,16 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 			auto t = glm::vec3(radius*cos_theta*sin_phi, 0.0f, 
 				-radius*sin_theta*sin_phi);
 			t = glm::normalize(t);
-			tangents[index] = t;
+			//tangents[index] = t;
 
 			// binormal
 			auto b = glm::vec3(radius*sin_theta*cos_phi,
 				radius*sin_phi, radius*cos_theta*cos_phi);
 			b = glm::normalize(b);
-			binormals[index] = b;
+			//binormals[index] = b;
 
 			// normal
-			auto const n = glm::cross(t, b);
+			auto const n = glm::cross(t,b);
 			normals[index] = n;
 
 			phi += dphi;
@@ -220,12 +220,13 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 
 	// create index array
 	auto indices = std::vector<glm::uvec3>(2u * (res_theta - 1u) * (res_phi - 1u));
-
+	
 	// generate indices iteratively
 	index = 0u;
-	for (unsigned int i = 0u; i < res_theta - 1u; ++i)
-	{
+
+	for (unsigned int i = 0u; i < res_theta - 1u; ++i){
 		for (unsigned int j = 0u; j < res_phi - 1u; ++j)
+
 		{
 			indices[index] = glm::uvec3(res_phi * i + j,
 				res_phi * i + j + 1u,
@@ -239,6 +240,7 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 		}
 	}
 
+
 	bonobo::mesh_data data;
 	glGenVertexArrays(1, &data.vao);
 	assert(data.vao != 0u);
@@ -248,15 +250,15 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 	auto const vertices_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(glm::vec3));
 	auto const normals_offset = vertices_size;
 	auto const normals_size = static_cast<GLsizeiptr>(normals.size() * sizeof(glm::vec3));
-	//auto const texcoords_offset = normals_offset + normals_size;
-	//auto const texcoords_size = static_cast<GLsizeiptr>(texcoords.size() * sizeof(glm::vec3));
-	//auto const tangents_offset = texcoords_offset + texcoords_size;
+	auto const texcoords_offset = normals_offset + normals_size;
+	auto const texcoords_size = static_cast<GLsizeiptr>(texcoords.size() * sizeof(glm::vec3));
+	auto const tangents_offset = texcoords_offset + texcoords_size;
 	auto const tangents_size = static_cast<GLsizeiptr>(tangents.size() * sizeof(glm::vec3));
-	//auto const binormals_offset = tangents_offset + tangents_size;
+	auto const binormals_offset = tangents_offset + tangents_size;
 	auto const binormals_size = static_cast<GLsizeiptr>(binormals.size() * sizeof(glm::vec3));
 	auto const bo_size = static_cast<GLsizeiptr>(vertices_size
 		+ normals_size
-		//+ texcoords_size
+		+ texcoords_size
 		+ tangents_size
 		+ binormals_size
 		);
