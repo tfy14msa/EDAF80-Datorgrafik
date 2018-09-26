@@ -60,7 +60,11 @@ edaf80::Assignment2::run()
 	// Load the sphere geometry
 	//auto const shape = parametric_shapes::createCircleRing(4u, 60u, 1.0f, 2.0f);
 	//auto const shape = parametric_shapes::createQuad(2u, 2u);
-	auto const shape = parametric_shapes::createSphere(60u, 100u,1.0f);
+	auto const shape = parametric_shapes::createSphere(8u, 8u,1.0f);
+	auto interpolate = true;
+	auto LERP_or_CATMULL = false; //LERP FALSE, CATMULL TRUE
+
+
 	if (shape.vao == 0u)
 		return;
 
@@ -144,27 +148,37 @@ edaf80::Assignment2::run()
 	bool show_logs = true;
 	bool show_gui = true;
 
-	auto const controlpoints = std::array<glm::vec3,10>{ 
+	//if(interpolate){
+		auto const control_points = std::array<glm::vec3,2>{ 
 			glm::vec3(1.0f, 1.0f, 1.0f),
 			glm::vec3(1.0f, 2.0f, 1.0f),
-			glm::vec3(-1.0f, -1.0f, -1.0f),
+			/*glm::vec3(-1.0f, -1.0f, -1.0f),
 			glm::vec3(1.0f, -1.0f, 1.5f),
 			glm::vec3(0.73f, 0.73f, -4.0f),
 			glm::vec3(1.5f, 2.0f, 1.0f),
 			glm::vec3(0.0f, 0.0f, 1.0f),
 			glm::vec3(-1.0f, -1.0f, -1.0f),
 			glm::vec3(2.0f, -2.0f, 0.0f),
-			glm::vec3(-2.0, 2.0f, 2.0f)
-	};
-	unsigned int num_controlpoints = controlpoints.size();
-		unsigned int pathindex = 0;
-	while (!glfwWindowShouldClose(window)) {
-		nowTime = GetTimeSeconds();
-		ddeltatime = nowTime - lastTime;
-		if (nowTime > fpsNextTick) {
-			fpsNextTick += 1.0;
-			fpsSamples = 0;
-		}
+			glm::vec3(-2.0, 2.0f, 2.0f)*/
+		};
+		unsigned int num_points = control_points.size();
+		unsigned int point_index = 0;
+		unsigned int next_int_point = 0;
+	//}
+
+		while (!glfwWindowShouldClose(window)) {
+			nowTime = GetTimeSeconds();
+			ddeltatime = nowTime - lastTime;
+			if (nowTime > fpsNextTick) {
+				fpsNextTick += 1.0;
+				fpsSamples = 0;
+				next_int_point = 1;
+			}else{ next_int_point = 0; }
+			/*if(nowTime>fpsNextTick){
+			next_int_point = 1;
+			}else {
+			next_int_point = 0;
+			}*/
 		fpsSamples++;
 
 		auto& io = ImGui::GetIO();
@@ -214,14 +228,17 @@ edaf80::Assignment2::run()
 
 		//! \todo Interpolate the movement of a shape between various
 		//!        control points
-		float interpolationstep = 1.0f - (fpsNextTick - nowTime);
-
-
-		circle_rings.set_translation(interpolation::evalLERP(controlpoints[pathindex], controlpoints[(pathindex + 1) % num_controlpoints], interpolationstep));
-
-		pathindex += 1;
-		if (pathindex >= num_controlpoints) {
-			pathindex = 0;
+		float interpolation_step = nowTime - fpsNextTick+1.0f;//1.0f - (fpsNextTick - nowTime);
+		if (interpolate) {
+			if (!LERP_or_CATMULL) {
+				circle_rings.set_translation(interpolation::evalLERP(control_points[point_index], control_points[(point_index + 1) % num_points], interpolation_step));
+			}
+			else { circle_rings.set_translation(interpolation::evalCatmullRom(control_points[(point_index-1) % num_points] , control_points[point_index],
+				control_points[(point_index + 1) % num_points], control_points[(point_index + 2) % num_points], 0.75f,interpolation_step)); }
+			point_index += next_int_point;
+			if (point_index >= num_points) {
+				point_index = 0;
+			}
 		}
 
 		int framebuffer_width, framebuffer_height;
