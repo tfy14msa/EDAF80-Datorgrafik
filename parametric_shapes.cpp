@@ -196,8 +196,8 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 			//	0.0f);
 
 			// tangent
-			auto t = glm::vec3(radius*cos_theta*sin_phi, 0.0f, 
-				-radius*sin_theta*sin_phi);
+			auto t = glm::vec3(radius*cos_theta, 0.0f, 
+				-radius*sin_theta);
 			t = glm::normalize(t);
 			//tangents[index] = t;
 
@@ -229,13 +229,13 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 
 		{
 			indices[index] = glm::uvec3(res_phi * i + j,
-				res_phi * i + j + 1u,
-				res_phi * i + j + 1u + res_phi);
+				res_phi * i + j + 1u + res_phi,
+				res_phi * i + j + 1u);
 			++index;
 
 			indices[index] = glm::uvec3(res_phi * i + j,
-				res_phi * i + j + res_phi + 1u,
-				res_phi * i + j + res_phi);
+				res_phi * i + j + res_phi,
+				res_phi * i + j + res_phi + 1u);
 			++index;
 		}
 	}

@@ -60,9 +60,9 @@ edaf80::Assignment2::run()
 	// Load the sphere geometry
 	//auto const shape = parametric_shapes::createCircleRing(4u, 60u, 1.0f, 2.0f);
 	//auto const shape = parametric_shapes::createQuad(2u, 2u);
-	auto const shape = parametric_shapes::createSphere(8u, 8u,1.0f);
-	auto interpolate = true;
-	auto LERP_or_CATMULL = false; //LERP FALSE, CATMULL TRUE
+	auto const shape = parametric_shapes::createSphere(100u, 100u,1.0f);
+	auto interpolate = false;
+	auto LERP_or_CATMULL = true; //LERP FALSE, CATMULL TRUE
 
 
 	if (shape.vao == 0u)
@@ -135,9 +135,9 @@ edaf80::Assignment2::run()
 	glEnable(GL_DEPTH_TEST);
 
 	// Enable face culling to improve performance
-	//glEnable(GL_CULL_FACE);
+	glEnable(GL_CULL_FACE);
 	//glCullFace(GL_FRONT);
-	//glCullFace(GL_BACK);
+	glCullFace(GL_BACK);
 
 
 	f64 ddeltatime;
@@ -149,21 +149,23 @@ edaf80::Assignment2::run()
 	bool show_gui = true;
 
 	//if(interpolate){
-		auto const control_points = std::array<glm::vec3,2>{ 
+		auto const control_points = std::array<glm::vec3,10>{ 
 			glm::vec3(1.0f, 1.0f, 1.0f),
 			glm::vec3(1.0f, 2.0f, 1.0f),
-			/*glm::vec3(-1.0f, -1.0f, -1.0f),
+			glm::vec3(-1.0f, -1.0f, -1.0f),
 			glm::vec3(1.0f, -1.0f, 1.5f),
 			glm::vec3(0.73f, 0.73f, -4.0f),
 			glm::vec3(1.5f, 2.0f, 1.0f),
 			glm::vec3(0.0f, 0.0f, 1.0f),
 			glm::vec3(-1.0f, -1.0f, -1.0f),
 			glm::vec3(2.0f, -2.0f, 0.0f),
-			glm::vec3(-2.0, 2.0f, 2.0f)*/
+			glm::vec3(-2.0, 2.0f, 2.0f)
 		};
 		unsigned int num_points = control_points.size();
 		unsigned int point_index = 0;
 		unsigned int next_int_point = 0;
+		float velocity = 1 / 100.0f;
+		float interpolation_step = 0.0f;
 	//}
 
 		while (!glfwWindowShouldClose(window)) {
@@ -172,13 +174,9 @@ edaf80::Assignment2::run()
 			if (nowTime > fpsNextTick) {
 				fpsNextTick += 1.0;
 				fpsSamples = 0;
-				next_int_point = 1;
-			}else{ next_int_point = 0; }
-			/*if(nowTime>fpsNextTick){
-			next_int_point = 1;
-			}else {
-			next_int_point = 0;
-			}*/
+				//next_int_point = 1;
+			}//else{ next_int_point = 0; } // Not enough time update. 
+			
 		fpsSamples++;
 
 		auto& io = ImGui::GetIO();
@@ -227,17 +225,20 @@ edaf80::Assignment2::run()
 
 
 		//! \todo Interpolate the movement of a shape between various
-		//!        control points
-		float interpolation_step = nowTime - fpsNextTick+1.0f;//1.0f - (fpsNextTick - nowTime);
+		//!        control 
+		
+		interpolation_step += velocity;
+		int point_index = floor(interpolation_step);
 		if (interpolate) {
-			if (!LERP_or_CATMULL) {
-				circle_rings.set_translation(interpolation::evalLERP(control_points[point_index], control_points[(point_index + 1) % num_points], interpolation_step));
+			if (use_linear) {
+				circle_rings.set_translation(interpolation::evalLERP(control_points[point_index% num_points], control_points[(point_index  + 1) % num_points], interpolation_step - point_index));
 			}
-			else { circle_rings.set_translation(interpolation::evalCatmullRom(control_points[(point_index-1) % num_points] , control_points[point_index],
-				control_points[(point_index + 1) % num_points], control_points[(point_index + 2) % num_points], 0.75f,interpolation_step)); }
-			point_index += next_int_point;
+			else { circle_rings.set_translation(interpolation::evalCatmullRom(control_points[(point_index + num_points -1) % num_points] , control_points[point_index% num_points],
+				control_points[(point_index + 1) % num_points], control_points[(point_index + 2) % num_points], catmull_rom_tension,interpolation_step-point_index)); }
+			//point_index += next_int_point;
 			if (point_index >= num_points) {
 				point_index = 0;
+
 			}
 		}
 
