@@ -74,8 +74,8 @@ edaf80::Assignment3::run()
 
 
 	std::string stringe = "grand_canyon";
-	auto my_cube_map_id = bonobo::loadTextureCubeMap(stringe + "/posx.png", stringe + "/negx.pos",
-		stringe + "/posy.png", stringe + "/negy.pos", stringe + "/posz.png", stringe + "/negz.pos");
+	auto my_cube_map_id = bonobo::loadTextureCubeMap(stringe + "/negx.pos", stringe + "/posx.png",
+		stringe + "/negy.pos", stringe + "/posx.png", stringe + "/negz.pos", stringe + "/posz.png");
 
 
 
@@ -134,6 +134,12 @@ edaf80::Assignment3::run()
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
 
+	auto const cube_set_uniforms = [&my_cube_map_id](GLuint program) {
+		glUniform1i(glGetUniformLocation(program, "skybox_cube"), 2);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, my_cube_map_id);
+	};
+
 	auto camera_position = mCamera.mWorld.GetTranslation();
 	auto ambient = glm::vec3(0.2f, 0.2f, 0.2f);
 	auto diffuse = glm::vec3(0.7f, 0.2f, 0.4f);
@@ -156,7 +162,7 @@ edaf80::Assignment3::run()
 
 	//auto sphere = Node();
 	circle_ring.set_geometry(sphere_shape);
-	circle_ring.set_program(&fallback_shader, set_uniforms);
+	circle_ring.set_program(&fallback_shader, cube_set_uniforms);
 	//sphere.set_scaling(glm::vec3(50.0, 50.0, 50.0));
 
 	glEnable(GL_DEPTH_TEST);
