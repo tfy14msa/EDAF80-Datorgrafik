@@ -64,6 +64,23 @@ edaf80::Assignment3::run()
 		return;
 	}
 
+	// Load the sphere geometry
+	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 1.0f);
+	if (sphere_shape.vao == 0u) {
+		LogError("Failed to retrieve the sphere mesh");
+		return;
+	}
+
+
+
+	std::string stringe = "grand_canyon";
+	auto my_cube_map_id = bonobo::loadTextureCubeMap(stringe + "/posx.png", stringe + "/negx.pos",
+		stringe + "/posy.png", stringe + "/negy.pos", stringe + "/posz.png", stringe + "/negz.pos");
+
+
+
+
+
 	// Set up the camera
 	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
 	mCamera.mMouseSensitivity = 0.003f;
@@ -75,6 +92,9 @@ edaf80::Assignment3::run()
 	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/fallback.vert" },
 	                                           { ShaderType::fragment, "EDAF80/fallback.frag" } },
 	                                         fallback_shader);
+
+
+	
 	if (fallback_shader == 0u) {
 		LogError("Failed to load fallback shader");
 		return;
@@ -101,6 +121,14 @@ edaf80::Assignment3::run()
 	if (texcoord_shader == 0u)
 		LogError("Failed to load texcoord shader");
 
+	GLuint custom_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/custom_shader.vert" },
+	{ ShaderType::fragment, "EDAF80/custom_shader.frag" } },
+		custom_shader);
+	if (custom_shader == 0u)
+		LogError("Failed to load custom shader");
+
+
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
 	auto const set_uniforms = [&light_position](GLuint program){
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
@@ -123,8 +151,13 @@ edaf80::Assignment3::run()
 	auto polygon_mode = polygon_mode_t::fill;
 
 	auto circle_ring = Node();
-	circle_ring.set_geometry(circle_ring_shape);
+	//circle_ring.set_geometry(circle_ring_shape);
+	//circle_ring.set_program(&fallback_shader, set_uniforms);
+
+	//auto sphere = Node();
+	circle_ring.set_geometry(sphere_shape);
 	circle_ring.set_program(&fallback_shader, set_uniforms);
+	//sphere.set_scaling(glm::vec3(50.0, 50.0, 50.0));
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -172,6 +205,9 @@ edaf80::Assignment3::run()
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_4) & JUST_PRESSED) {
 			circle_ring.set_program(&texcoord_shader, set_uniforms);
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
+			circle_ring.set_program(&custom_shader, set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_Z) & JUST_PRESSED) {
 			polygon_mode = get_next_mode(polygon_mode);
