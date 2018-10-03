@@ -73,12 +73,7 @@ edaf80::Assignment3::run()
 
 
 
-	std::string stringe = "grand_canyon";
-	auto my_cube_map_id = bonobo::loadTextureCubeMap(stringe + "/negx.pos", stringe + "/posx.png",
-		stringe + "/negy.pos", stringe + "/posx.png", stringe + "/negz.pos", stringe + "/posz.png");
-
-
-
+	
 
 
 	// Set up the camera
@@ -123,10 +118,11 @@ edaf80::Assignment3::run()
 
 	GLuint custom_shader = 0u;
 	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/custom_shader.vert" },
-	{ ShaderType::fragment, "EDAF80/custom_shader.frag" } },
+											   { ShaderType::fragment, "EDAF80/custom_shader.frag" } },
 		custom_shader);
-	if (custom_shader == 0u)
+	/*if (custom_shader == 0u){
 		LogError("Failed to load custom shader");
+	}*/
 
 
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
@@ -134,10 +130,22 @@ edaf80::Assignment3::run()
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
 
-	auto const cube_set_uniforms = [&my_cube_map_id](GLuint program) {
-		glUniform1i(glGetUniformLocation(program, "skybox_cube"), 2);
+
+	glActiveTexture(GL_TEXTURE2);
+	std::string stringe = "grand_canyon";
+	auto my_cube_map_texture = bonobo::loadTextureCubeMap(stringe + "/posx.pos", stringe + "/negx.png",
+		stringe + "/posy.pos", stringe + "/negx.png", stringe + "/posz.pos", stringe + "/negz.png");
+	if (my_cube_map_texture == 0u) {
+		LogError("Failed to load my_cube_map texture");
+		return;
+	}
+
+
+
+	auto const cube_set_uniforms = [&my_cube_map_texture](GLuint program) {
+		glUniform1i(glGetUniformLocation(program, "my_cube"), 2);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, my_cube_map_id);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, my_cube_map_texture);
 	};
 
 	auto camera_position = mCamera.mWorld.GetTranslation();
@@ -213,7 +221,7 @@ edaf80::Assignment3::run()
 			circle_ring.set_program(&texcoord_shader, set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
-			circle_ring.set_program(&custom_shader, set_uniforms);
+			circle_ring.set_program(&custom_shader, cube_set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_Z) & JUST_PRESSED) {
 			polygon_mode = get_next_mode(polygon_mode);
