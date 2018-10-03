@@ -4,7 +4,7 @@
 uniform samplerCube my_cube_map;
 
 in VS_OUT{
-	//vec3 vertex;
+	vec3 world_vertex;
 	vec3 world_normal;
 	//vec3 texcoords;
 	//vec3 tangent;

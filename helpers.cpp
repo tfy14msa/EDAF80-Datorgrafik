@@ -323,16 +323,33 @@ bonobo::loadTextureCubeMap(std::string const& posx, std::string const& negx,
 	             /* the pointer to the actual data on the CPU */reinterpret_cast<GLvoid const*>(data.data()));
 
 	//! \todo repeat now the texture filling for the 5 remaining faces
+	auto data_posx = getTextureData("cubemaps/" + posx, width, height, false);
+	auto data_negy = getTextureData("cubemaps/" + negy, width, height, false);
+	auto data_posy = getTextureData("cubemaps/" + posy, width, height, false);
+	auto data_negz = getTextureData("cubemaps/" + negz, width, height, false);
+	auto data_posz = getTextureData("cubemaps/" + posz, width, height, false);
+	
+	if (data_posx.empty() ||
+		data_negy.empty() ||
+		data_posy.empty() ||
+		data_negz.empty() ||
+		data_posz.empty() ) {
+		glDeleteTextures(1, &texture);
+		return 0u;
+	}
+
+
+
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X,0,GL_RGBA,static_cast<GLsizei>(width),static_cast<GLsizei>(height),0,
-		GL_RGBA,GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+		GL_RGBA,GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data_posx.data()));
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data_negy.data()));
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data_posy.data()));
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data_negz.data()));
 	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
-		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+		GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data_posz.data()));
 
 	if (generate_mipmap)
 		// Generate the mipmap hierarchy; wait for EDAN35 to understand

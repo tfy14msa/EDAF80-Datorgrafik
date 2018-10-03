@@ -191,9 +191,9 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 			
 			//TODO: nedanför om det behövs fixas
 			// texture coordinates
-			//texcoords[index] = glm::vec3(static_cast<float>(j) / (static_cast<float>(res_radius) - 1.0f),
-			//	static_cast<float>(i) / (static_cast<float>(res_theta) - 1.0f),
-			//	0.0f);
+			texcoords[index] = glm::vec3(static_cast<float>(j) / (static_cast<float>(res_phi) - 1.0f),
+				static_cast<float>(i) / (static_cast<float>(res_theta) - 1.0f),
+				0.0f);
 
 			// tangent
 			auto t = glm::vec3(radius*cos_theta, 0.0f, 
@@ -275,18 +275,18 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::normals));
 	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::normals), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(normals_offset));
 
-	//glBufferSubData(GL_ARRAY_BUFFER, texcoords_offset, texcoords_size, static_cast<GLvoid const*>(texcoords.data()));
-	//glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::texcoords));
-	//glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::texcoords), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(texcoords_offset));
+	glBufferSubData(GL_ARRAY_BUFFER, texcoords_offset, texcoords_size, static_cast<GLvoid const*>(texcoords.data()));
+	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::texcoords));
+	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::texcoords), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(texcoords_offset));
 
-	/*glBufferSubData(GL_ARRAY_BUFFER, tangents_offset, tangents_size, static_cast<GLvoid const*>(tangents.data()));
+	glBufferSubData(GL_ARRAY_BUFFER, tangents_offset, tangents_size, static_cast<GLvoid const*>(tangents.data()));
 	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::tangents));
 	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::tangents), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(tangents_offset));
 
 	glBufferSubData(GL_ARRAY_BUFFER, binormals_offset, binormals_size, static_cast<GLvoid const*>(binormals.data()));
 	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::binormals));
 	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::binormals), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(binormals_offset));
-*/
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
 	data.indices_nb = indices.size() * 3u;

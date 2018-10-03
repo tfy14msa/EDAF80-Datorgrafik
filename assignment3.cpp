@@ -116,38 +116,28 @@ edaf80::Assignment3::run()
 	if (texcoord_shader == 0u)
 		LogError("Failed to load texcoord shader");
 
-	GLuint custom_shader = 0u;
-	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/custom_shader.vert" },
-											   { ShaderType::fragment, "EDAF80/custom_shader.frag" } },
-		custom_shader);
-	/*if (custom_shader == 0u){
-		LogError("Failed to load custom shader");
-	}*/
-
+	GLuint skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/cubemap.vert" },
+											   { ShaderType::fragment, "EDAF80/cubemap.frag" } },
+												skybox_shader);
+	if (skybox_shader == 0u){
+		LogError("Failed to load cube shader");
+	}
+	GLuint phong_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/phong.vert" },
+	{ ShaderType::fragment, "EDAF80/phong.frag" } },
+		phong_shader);
+	if (phong_shader == 0u) {
+		LogError("Failed to load cube shader");
+	}
 
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
 	auto const set_uniforms = [&light_position](GLuint program){
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
-
-
-	glActiveTexture(GL_TEXTURE2);
-	std::string stringe = "grand_canyon";
-	auto my_cube_map_texture = bonobo::loadTextureCubeMap(stringe + "/posx.pos", stringe + "/negx.png",
-		stringe + "/posy.pos", stringe + "/negx.png", stringe + "/posz.pos", stringe + "/negz.png");
-	if (my_cube_map_texture == 0u) {
-		LogError("Failed to load my_cube_map texture");
-		return;
-	}
-
-
-
-	auto const cube_set_uniforms = [&my_cube_map_texture](GLuint program) {
-		glUniform1i(glGetUniformLocation(program, "my_cube"), 2);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, my_cube_map_texture);
-	};
-
+	
+	
+	// Phong
 	auto camera_position = mCamera.mWorld.GetTranslation();
 	auto ambient = glm::vec3(0.2f, 0.2f, 0.2f);
 	auto diffuse = glm::vec3(0.7f, 0.2f, 0.4f);
@@ -170,8 +160,38 @@ edaf80::Assignment3::run()
 
 	//auto sphere = Node();
 	circle_ring.set_geometry(sphere_shape);
-	circle_ring.set_program(&fallback_shader, cube_set_uniforms);
+	
+
 	//sphere.set_scaling(glm::vec3(50.0, 50.0, 50.0));
+
+
+	//Cube Map
+	//glActiveTexture(GL_TEXTURE2);
+	std::string stringe = "grand_canyon";
+	auto my_cube_map_id = bonobo::loadTextureCubeMap(stringe + "/posx.png", stringe + "/negx.png",
+		stringe + "/posy.png", stringe + "/negy.png", stringe + "/posz.png", stringe + "/negz.png", true);
+	if (my_cube_map_id == 0u) {
+		LogError("Failed to load my_cube_map texture");
+		return;
+	}
+	circle_ring.add_texture("my_cube_map", my_cube_map_id, GL_PROXY_TEXTURE_CUBE_MAP);
+
+
+	auto const cube_set_uniforms = [&camera_position, &my_cube_map_id](GLuint program) {
+		//glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		//glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, my_cube_map_id);
+	};
+	
+
+
+
+
+
+
+
+
+	circle_ring.set_program(&fallback_shader, set_uniforms);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -221,7 +241,10 @@ edaf80::Assignment3::run()
 			circle_ring.set_program(&texcoord_shader, set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
-			circle_ring.set_program(&custom_shader, cube_set_uniforms);
+			circle_ring.set_program(&skybox_shader, cube_set_uniforms);
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_6) & JUST_PRESSED) {
+			circle_ring.set_program(&phong_shader, phong_set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_Z) & JUST_PRESSED) {
 			polygon_mode = get_next_mode(polygon_mode);
@@ -251,7 +274,6 @@ edaf80::Assignment3::run()
 		}
 
 		camera_position = mCamera.mWorld.GetTranslation();
-
 		int framebuffer_width, framebuffer_height;
 		glfwGetFramebufferSize(window, &framebuffer_width, &framebuffer_height);
 		glViewport(0, 0, framebuffer_width, framebuffer_height);
@@ -260,6 +282,9 @@ edaf80::Assignment3::run()
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		circle_ring.set_rotation_y(2);
+		circle_ring.render(mCamera.GetWorldToClipMatrix(), circle_ring.get_transform());
 
 		bool opened = ImGui::Begin("Scene Control", &opened, ImVec2(300, 100), -1.0f, 0);
 		if (opened) {
