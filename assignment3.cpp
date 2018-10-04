@@ -65,7 +65,7 @@ edaf80::Assignment3::run()
 	}*/
 
 	// Load the sphere geometry
-	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 1.0f);
+	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 20.0f);
 	if (sphere_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
 		return;
@@ -123,13 +123,21 @@ edaf80::Assignment3::run()
 	if (skybox_shader == 0u){
 		LogError("Failed to load cube shader");
 	}
-	/*GLuint phong_shader = 0u;
+	GLuint phong_shader = 0u;
 	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/phong.vert" },
 											   { ShaderType::fragment, "EDAF80/phong.frag" } },
 												phong_shader);
 	if (phong_shader == 0u) {
 		LogError("Failed to load phong shader");
-	}*/
+	}
+
+	GLuint bumpmap_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/bumpmap.vert" },
+	{ ShaderType::fragment, "EDAF80/bumpmap.frag" } },
+		bumpmap_shader);
+	if (bumpmap_shader == 0u) {
+		LogError("Failed to load bumpmap shader");
+	}
 
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
 	auto const set_uniforms = [&light_position](GLuint program){
@@ -174,23 +182,22 @@ edaf80::Assignment3::run()
 		LogError("Failed to load my_cube_map texture");
 		return;
 	}
-	circle_ring.add_texture("my_cube_map", my_cube_map_id, GL_PROXY_TEXTURE_CUBE_MAP);
+	circle_ring.add_texture("my_cube_map", my_cube_map_id, GL_TEXTURE_CUBE_MAP);
 	//GLuint const sun_texture = bonobo::loadTexture2D("sunmap.png");
 	//circle_ring.add_texture("diffuse", sun_texture, GL_TEXTURE_2D);
 
 	auto const cube_set_uniforms = [&camera_position, &my_cube_map_id](GLuint program) {
 		//glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 		//glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, my_cube_map_id);
+		//glBindTexture(GL_TEXTURE_CUBE_MAP, my_cube_map_id);
 	};
-	circle_ring.set_program(&fallback_shader, cube_set_uniforms);
+	circle_ring.set_program(&fallback_shader, set_uniforms);
 
-
-
-
-
-
-
+	//Bump Map
+	auto my_bump_map_id = bonobo::loadTexture2D("earth_bump.png");
+	circle_ring.add_texture("my_bump_map", my_bump_map_id, GL_TEXTURE_2D);
+	GLuint const earth_texture = bonobo::loadTexture2D("earth_diffuse.png");
+	circle_ring.add_texture("my_diffuse", earth_texture, GL_TEXTURE_2D);
 
 	
 
@@ -242,11 +249,14 @@ edaf80::Assignment3::run()
 			circle_ring.set_program(&texcoord_shader, set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
-			circle_ring.set_program(&skybox_shader, cube_set_uniforms);
+			circle_ring.set_program(&skybox_shader, set_uniforms);
 		}
-		/*if (inputHandler.GetKeycodeState(GLFW_KEY_6) & JUST_PRESSED) {
+		if (inputHandler.GetKeycodeState(GLFW_KEY_6) & JUST_PRESSED) {
 			circle_ring.set_program(&phong_shader, phong_set_uniforms);
-		}*/
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_7) & JUST_PRESSED) {
+			circle_ring.set_program(&bumpmap_shader, set_uniforms);
+		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_Z) & JUST_PRESSED) {
 			polygon_mode = get_next_mode(polygon_mode);
 		}
@@ -284,9 +294,10 @@ edaf80::Assignment3::run()
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-	
+		
+		//circle_ring.rotate_y(200 * ddeltatime);
 		//circle_ring.render(mCamera.GetWorldToClipMatrix(), circle_ring.get_transform(),skybox_shader,cube_set_uniforms);
-		//circle_ring.render(mCamera.GetWorldToClipMatrix(), circle_ring.get_transform());
+		circle_ring.render(mCamera.GetWorldToClipMatrix(), circle_ring.get_transform());
 		bool opened = ImGui::Begin("Scene Control", &opened, ImVec2(300, 100), -1.0f, 0);
 		if (opened) {
 			ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient));

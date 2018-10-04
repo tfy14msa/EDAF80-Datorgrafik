@@ -191,21 +191,21 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 			
 			//TODO: nedanför om det behövs fixas
 			// texture coordinates
-			texcoords[index] = glm::vec3(static_cast<float>(j) / (static_cast<float>(res_phi) - 1.0f),
-				static_cast<float>(i) / (static_cast<float>(res_theta) - 1.0f),
+			texcoords[index] = glm::vec3(static_cast<float>(i) / (static_cast<float>(res_theta) - 1.0f),
+				static_cast<float>(j) / (static_cast<float>(res_phi) - 1.0f),
 				0.0f);
 
 			// tangent
 			auto t = glm::vec3(radius*cos_theta, 0.0f, 
 				-radius*sin_theta);
 			t = glm::normalize(t);
-			//tangents[index] = t;
+			tangents[index] = t;
 
 			// binormal
 			auto b = glm::vec3(radius*sin_theta*cos_phi,
 				radius*sin_phi, radius*cos_theta*cos_phi);
 			b = glm::normalize(b);
-			//binormals[index] = b;
+			binormals[index] = b;
 
 			// normal
 			auto const n = glm::cross(t,b);
