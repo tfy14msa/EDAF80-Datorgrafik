@@ -8,11 +8,42 @@
 #include "core/LogView.h"
 #include "core/Misc.h"
 #include "core/ShaderProgramManager.hpp"
+#include "core/node.hpp"
+#include "interpolation.hpp"
+#include "parametric_shapes.hpp"
+#include <glm/glm.hpp>
+
 
 #include <imgui.h>
 #include <external/imgui_impl_glfw_gl3.h>
 #include <tinyfiledialogs.h>
 
+#include <stdexcept>
+
+
+
+#include "assignment3.hpp"
+#include "interpolation.hpp"
+#include "parametric_shapes.hpp"
+
+
+#include "config.hpp"
+#include "core/Bonobo.h"
+#include "core/FPSCamera.h"
+#include "core/Log.h"
+#include "core/LogView.h"
+#include "core/Misc.h"
+#include "core/node.hpp"
+#include "core/ShaderProgramManager.hpp"
+
+#include <imgui.h>
+#include <external/imgui_impl_glfw_gl3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <tinyfiledialogs.h>
+
+#include <cstdlib>
 #include <stdexcept>
 
 edaf80::Assignment4::Assignment4() :
@@ -60,12 +91,37 @@ edaf80::Assignment4::run()
 	// Todo: Insert the creation of other shader programs.
 	//       (Check how it was done in assignment 3.)
 	//
+	GLuint diffuse_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/diffuse.vert" },
+	{ ShaderType::fragment, "EDAF80/diffuse.frag" } },
+		diffuse_shader);
+	if (diffuse_shader == 0u)
+		LogError("Failed to load diffuse shader");
 
 	//
 	// Todo: Load your geometry
 	//
 
+	auto const quad_shape = parametric_shapes::createQuad(20u, 20u);
+	if (quad_shape.vao == 0u) {
+		LogError("Failed to retrieve the quad mesh");
+		return;
+	}
+
+
+	auto quad = Node();
+	quad.set_geometry(quad_shape);
+
 	glEnable(GL_DEPTH_TEST);
+
+	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
+	auto const set_uniforms = [&light_position](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+	};
+	quad.set_program(&fallback_shader, set_uniforms);
+
+	GLuint const earth_texture = bonobo::loadTexture2D("earth_diffuse.png");
+	quad.add_texture("my_diffuse", earth_texture, GL_TEXTURE_2D);
 
 	// Enable face culling to improve performance:
 	//glEnable(GL_CULL_FACE);
@@ -126,9 +182,7 @@ edaf80::Assignment4::run()
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
 		if (!shader_reload_failed) {
-			//
-			// Todo: Render all your geometry here.
-			//
+			quad.render(mCamera.GetWorldToClipMatrix(), quad.get_transform());
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

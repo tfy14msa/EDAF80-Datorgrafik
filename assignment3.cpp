@@ -2,6 +2,7 @@
 #include "interpolation.hpp"
 #include "parametric_shapes.hpp"
 
+
 #include "config.hpp"
 #include "core/Bonobo.h"
 #include "core/FPSCamera.h"
@@ -65,7 +66,7 @@ edaf80::Assignment3::run()
 	}*/
 
 	// Load the sphere geometry
-	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 20.0f);
+	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 1.0f);
 	if (sphere_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
 		return;
