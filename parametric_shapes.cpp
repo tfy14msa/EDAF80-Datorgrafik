@@ -76,7 +76,7 @@ parametric_shapes::createQuad(unsigned int width, unsigned int height)
 	auto const vertices_offset = 0u;
 	auto const vertices_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(glm::vec3));
 	auto const normals_offset = vertices_size;
-	//auto const normals_size = static_cast<GLsizeiptr>(normals.size() * sizeof(glm::vec3));
+	auto const normals_size = static_cast<GLsizeiptr>(normals.size() * sizeof(glm::vec3));
 	//auto const texcoords_offset = normals_offset + normals_size;
 	//auto const texcoords_size = static_cast<GLsizeiptr>(texcoords.size() * sizeof(glm::vec3));
 	//auto const tangents_offset = texcoords_offset + texcoords_size;
@@ -84,7 +84,7 @@ parametric_shapes::createQuad(unsigned int width, unsigned int height)
 	//auto const binormals_offset = tangents_offset + tangents_size;
 	//auto const binormals_size = static_cast<GLsizeiptr>(binormals.size() * sizeof(glm::vec3));
 	auto const bo_size = static_cast<GLsizeiptr>(vertices_size
-	//	+ normals_size
+		+ normals_size
 	//	+ texcoords_size
 	//	+ tangents_size
 	//	+ binormals_size

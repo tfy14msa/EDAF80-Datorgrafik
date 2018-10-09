@@ -97,6 +97,18 @@ edaf80::Assignment4::run()
 		diffuse_shader);
 	if (diffuse_shader == 0u)
 		LogError("Failed to load diffuse shader");
+	GLuint default_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/default.vert" },
+	{ ShaderType::fragment, "EDAF80/default.frag" } },
+		default_shader);
+	if (default_shader == 0u)
+		LogError("Failed to load default shader");
+	/*GLuint water_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/water.vert" },
+	{ ShaderType::fragment, "EDAF80/water.frag" } },
+		water_shader);
+	if (water_shader == 0u)
+		LogError("Failed to load water shader");*/
 
 	//
 	// Todo: Load your geometry
@@ -107,17 +119,28 @@ edaf80::Assignment4::run()
 		LogError("Failed to retrieve the quad mesh");
 		return;
 	}
-
+	auto const sphere_shape = parametric_shapes::createSphere(20u, 20u,20.0f);
+	if (sphere_shape.vao == 0u) {
+		LogError("Failed to retrieve the sphere mesh");
+		return;
+	}
 
 	auto quad = Node();
 	quad.set_geometry(quad_shape);
 
 	glEnable(GL_DEPTH_TEST);
 
-	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
+	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f)*10.0f;
 	auto const set_uniforms = [&light_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
+
+	float ttime = 0.0f;
+	auto const water_set_uniforms = [&light_position,&ttime](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform1f(glGetUniformLocation(program, "ttime"), ttime);
+	};
+
 	quad.set_program(&fallback_shader, set_uniforms);
 
 	GLuint const earth_texture = bonobo::loadTexture2D("earth_diffuse.png");
@@ -146,7 +169,7 @@ edaf80::Assignment4::run()
 			fpsSamples = 0;
 		}
 		fpsSamples++;
-
+		ttime += ddeltatime / 1000;
 		auto& io = ImGui::GetIO();
 		inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
 
@@ -154,6 +177,18 @@ edaf80::Assignment4::run()
 		inputHandler.Advance();
 		mCamera.Update(ddeltatime, inputHandler);
 
+		if (inputHandler.GetKeycodeState(GLFW_KEY_1) & JUST_PRESSED) {
+			quad.set_program(&fallback_shader, set_uniforms);
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_2) & JUST_PRESSED) {
+			quad.set_program(&default_shader, set_uniforms);
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_3) & JUST_PRESSED) {
+			quad.set_program(&diffuse_shader, set_uniforms);
+		}
+		/*if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
+			quad.set_program(&water_shader, water_set_uniforms);
+		}*/
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)

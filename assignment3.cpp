@@ -66,7 +66,8 @@ edaf80::Assignment3::run()
 	}*/
 
 	// Load the sphere geometry
-	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 1.0f);
+	auto const radius = 50.0f;
+	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, radius);
 	if (sphere_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
 		return;
@@ -140,7 +141,7 @@ edaf80::Assignment3::run()
 		LogError("Failed to load bumpmap shader");
 	}
 
-	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
+	auto light_position = glm::vec3(-2.0f, 4.0f, 4.0f)*radius;
 	auto const set_uniforms = [&light_position](GLuint program){
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
