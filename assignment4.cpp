@@ -103,12 +103,12 @@ edaf80::Assignment4::run()
 		default_shader);
 	if (default_shader == 0u)
 		LogError("Failed to load default shader");
-	/*GLuint water_shader = 0u;
+	GLuint water_shader = 0u;
 	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/water.vert" },
 	{ ShaderType::fragment, "EDAF80/water.frag" } },
 		water_shader);
 	if (water_shader == 0u)
-		LogError("Failed to load water shader");*/
+		LogError("Failed to load water shader");
 
 	//
 	// Todo: Load your geometry
@@ -186,9 +186,9 @@ edaf80::Assignment4::run()
 		if (inputHandler.GetKeycodeState(GLFW_KEY_3) & JUST_PRESSED) {
 			quad.set_program(&diffuse_shader, set_uniforms);
 		}
-		/*if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
+		if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
 			quad.set_program(&water_shader, water_set_uniforms);
-		}*/
+		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)

@@ -13,6 +13,8 @@ namespace parametric_shapes
 	//!         data
 	bonobo::mesh_data createQuad(unsigned int width, unsigned int height);
 
+	bonobo::mesh_data createFinerQuad(unsigned int width, unsigned int height);
+
 	//! \brief Create a sphere for some tesselation level and make it
 	//!        available to OpenGL.
 	//!

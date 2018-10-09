@@ -1,7 +1,7 @@
 #version 410
 
 layout (location = 0) in vec3 vertex;
-layout (location = 2) in vec3 texcoords;
+//layout (location = 2) in vec3 texcoords;
 
 uniform mat4 vertex_model_to_world;
 uniform mat4 normal_model_to_world;
@@ -30,9 +30,11 @@ vec2 sharpness = vec2(2.0, 2.0);
 float kx = sharpness.x;
 float kz = sharpness.y;
 
-mat2 direction = mat2(vec2(−1.0, 0.0),vec2(−0.7, 0.7));
-vec2 dir1 = direction.x;
-vec2 dir2 = direction.y;
+//mat2 direction = mat2(vec2(−1.0, 0.0),vec2(-0.7, 0.7));
+//vec2 dir1 = direction.x;
+//vec2 dir2 = direction.y;
+vec2 dir1 = vec2(-1.0, 0.0);
+vec2 dir2 = vec2(-0.7f, 0.7f);
 float Dx1 = dir1.x;
 float Dx2 = dir2.x;
 float Dz1 = dir1.y;
@@ -57,7 +59,7 @@ float big_deriv_z2 = kz*Az*pow(sin((Dx2*x+Dz2*z)*fz+tpz)*0.5+0.5,kz-1);
 float dHdx1 = big_deriv_x1*dtemp_1*Dx1;
 float dHdx2 = big_deriv_x2*dtemp_2*Dx2;
 float dHdz1 = big_deriv_z1*dtemp_1*Dz1;
-float dHdz2 = big_deriv_z1*dtemp_2*Dz2;
+float dHdz2 = big_deriv_z2*dtemp_2*Dz2;
 
 float dHdx = dHdx1 + dHdx2;
 float dHdz = dHdz1 + dHdz2;
