@@ -31,10 +31,10 @@ void main()
 	vec3 b = normalize(fs_in.world_binormal);
 	vec3 l = normalize(fs_in.world_light);
 	vec3 tex = fs_in.world_texcoords;
-	//mat3 TBN = mat3(t,b,n);
+	mat3 TBN = mat3(t,b,n);
 
 	vec3 ntext = (texture(my_bump_map, tex.xy).xyz)*2-1;
-	vec3 bump = normalize(mat3(t,b,n) * ntext);
+	vec3 bump = normalize(TBN * ntext);
 	
 	vec3 diffuse_tex = texture(my_diffuse, tex.xy).xyz;
 	

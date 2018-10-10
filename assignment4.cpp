@@ -45,7 +45,16 @@
 
 #include <cstdlib>
 #include <stdexcept>
+enum class polygon_mode_t : unsigned int {
+	fill = 0u,
+	line,
+	point
+};
 
+static polygon_mode_t get_next_mode(polygon_mode_t mode)
+{
+	return static_cast<polygon_mode_t>((static_cast<unsigned int>(mode) + 1u) % 3u);
+}
 edaf80::Assignment4::Assignment4() :
 	mCamera(0.5f * glm::half_pi<float>(),
 	        static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
@@ -103,46 +112,80 @@ edaf80::Assignment4::run()
 		default_shader);
 	if (default_shader == 0u)
 		LogError("Failed to load default shader");
+	GLuint skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/cubemap.vert" },
+	{ ShaderType::fragment, "EDAF80/cubemap.frag" } },
+		skybox_shader);
+	if (skybox_shader == 0u)
+		LogError("Failed to load skybox shader");
+	
 	GLuint water_shader = 0u;
 	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/water.vert" },
 	{ ShaderType::fragment, "EDAF80/water.frag" } },
 		water_shader);
 	if (water_shader == 0u)
 		LogError("Failed to load water shader");
-
+	auto polygon_mode = polygon_mode_t::fill;
 	//
 	// Todo: Load your geometry
 	//
 
-	auto const quad_shape = parametric_shapes::createQuad(20u, 20u);
+	float sides = 500.0f;
+	auto const quad_shape = parametric_shapes::createFinerQuad(sides, sides,500u,500u);
 	if (quad_shape.vao == 0u) {
 		LogError("Failed to retrieve the quad mesh");
 		return;
 	}
-	auto const sphere_shape = parametric_shapes::createSphere(20u, 20u,20.0f);
+	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u,500.0f);
 	if (sphere_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
 		return;
 	}
 
 	auto quad = Node();
+	quad.set_translation(glm::vec3(-sides/2, 0.0f, -sides/2));
 	quad.set_geometry(quad_shape);
 
-	glEnable(GL_DEPTH_TEST);
+	auto area = Node();
+	area.set_geometry(sphere_shape);
 
-	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f)*10.0f;
+
+	glEnable(GL_DEPTH_TEST);
+	auto camera_position = mCamera.mWorld.GetTranslation();
+	auto light_position = glm::vec3(-2.0f, 8.0f, 2.0f)*1.0f;
 	auto const set_uniforms = [&light_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 	};
 
+	
+	
+	
+	std::string stringe = "cloudyhills";
+	auto my_reflection_cube_id = bonobo::loadTextureCubeMap(stringe + "/posx.png", stringe + "/negx.png",
+		stringe + "/posy.png", stringe + "/negy.png", stringe + "/posz.png", stringe + "/negz.png", true);
+	if (my_reflection_cube_id == 0u) {
+		LogError("Failed to load my_cube_map texture");
+		return;
+	}
+	quad.add_texture("my_reflection_cube", my_reflection_cube_id, GL_TEXTURE_CUBE_MAP);
+	
+	GLuint const ripple_texture = bonobo::loadTexture2D("waves.png");
+	quad.add_texture("my_ripple", ripple_texture, GL_TEXTURE_2D);
+	
+	
+	
+	
+	
 	float ttime = 0.0f;
-	auto const water_set_uniforms = [&light_position,&ttime](GLuint program) {
+	auto const water_set_uniforms = [&light_position,&camera_position,&ttime](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 		glUniform1f(glGetUniformLocation(program, "ttime"), ttime);
 	};
 
 	quad.set_program(&fallback_shader, set_uniforms);
-
+	area.set_program(&skybox_shader, water_set_uniforms);
+	
 	GLuint const earth_texture = bonobo::loadTexture2D("earth_diffuse.png");
 	quad.add_texture("my_diffuse", earth_texture, GL_TEXTURE_2D);
 
@@ -180,19 +223,23 @@ edaf80::Assignment4::run()
 		if (inputHandler.GetKeycodeState(GLFW_KEY_1) & JUST_PRESSED) {
 			quad.set_program(&fallback_shader, set_uniforms);
 		}
-		if (inputHandler.GetKeycodeState(GLFW_KEY_2) & JUST_PRESSED) {
+		/*if (inputHandler.GetKeycodeState(GLFW_KEY_2) & JUST_PRESSED) {
 			quad.set_program(&default_shader, set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_3) & JUST_PRESSED) {
 			quad.set_program(&diffuse_shader, set_uniforms);
-		}
+		}*/
 		if (inputHandler.GetKeycodeState(GLFW_KEY_5) & JUST_PRESSED) {
 			quad.set_program(&water_shader, water_set_uniforms);
+			
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
 			show_gui = !show_gui;
+		if (inputHandler.GetKeycodeState(GLFW_KEY_Z) & JUST_PRESSED) {
+			polygon_mode = get_next_mode(polygon_mode);
+		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
 			shader_reload_failed = !program_manager.ReloadAllPrograms();
 			if (shader_reload_failed)
@@ -218,6 +265,7 @@ edaf80::Assignment4::run()
 
 		if (!shader_reload_failed) {
 			quad.render(mCamera.GetWorldToClipMatrix(), quad.get_transform());
+			area.render(mCamera.GetWorldToClipMatrix(), area.get_transform());
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

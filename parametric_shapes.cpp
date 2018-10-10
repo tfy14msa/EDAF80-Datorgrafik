@@ -158,19 +158,64 @@ parametric_shapes::createQuad(unsigned int width, unsigned int height)
 }
 
 bonobo::mesh_data
-parametric_shapes::createFinerQuad(unsigned int width, unsigned int height)
+parametric_shapes::createFinerQuad(unsigned int width, unsigned int height,unsigned int res_width, unsigned int res_height)
 {
-	auto const vertices = std::array<glm::vec3, 4>{
-		glm::vec3(0.0f, 0.0f, 0.0f),
-			glm::vec3(static_cast<float>(width), 0.0f, 0.0f),
-			glm::vec3(static_cast<float>(width), static_cast<float>(height), 0.0f),
-			glm::vec3(0.0f, static_cast<float>(height), 0.0f)
-	};
 
-	auto const indices = std::array<glm::uvec3, 2>{
-		glm::uvec3(0u, 1u, 2u),
-			glm::uvec3(0u, 2u, 3u)
-	};
+
+	auto const vertices_nb = (res_width+1)*(res_height+1);
+
+	auto vertices = std::vector<glm::vec3>(vertices_nb);
+	//auto normals = std::vector<glm::vec3>(vertices_nb);
+	auto texcoords = std::vector<glm::vec3>(vertices_nb);
+	//auto tangents = std::vector<glm::vec3>(vertices_nb);
+	//auto binormals = std::vector<glm::vec3>(vertices_nb);
+
+	
+	
+	// generate vertices iteratively
+
+	
+	float current_width = 0.0f, current_height = 0.0, 
+		d_width = width / res_width, d_height = height / res_height;
+	auto current_position = glm::vec3(current_width, 0.0f, current_height);
+	
+	for (unsigned int i = 0u; i <= res_width; ++i) {
+		current_position = glm::vec3(current_width, 0.0f, current_height);
+		vertices[(res_height + 1)*i] = current_position;
+		texcoords[(res_height + 1)*i] = current_position; //same?
+		
+		for (unsigned int j = 0u; j <= res_height; ++j) {
+			current_height += d_height;
+			current_position = glm::vec3(current_width, 0.0f, current_height);
+			vertices[(res_height + 1)*i + j] = current_position;
+			texcoords[(res_height + 1)*i + j] = current_position; //same?
+		}
+		current_width += d_width;
+		current_height = 0.0f;
+	}
+
+
+	// create index array
+	auto indices = std::vector<glm::uvec3>(2u * res_width*res_height);
+	int index = 0u;
+
+	for (unsigned int i = 0u; i < res_width; ++i) {
+
+		for (unsigned int j = 0u; j < res_height; ++j) {
+			indices[index] = glm::uvec3(i * (res_height + 1) + j,
+				(i + 1) * (res_height + 1) + j,
+				(i + 1) * (res_height + 1) + j + 1);
+			++index;
+
+			indices[index] = glm::uvec3(i * (res_height + 1) + j,
+				(i + 1) * (res_height + 1) + j + 1,
+				i * (res_height + 1) + j + 1);
+
+			++index;
+		}
+
+	}
+
 
 	bonobo::mesh_data data;
 
@@ -189,10 +234,11 @@ parametric_shapes::createFinerQuad(unsigned int width, unsigned int height)
 
 	auto const vertices_offset = 0u;
 	auto const vertices_size = static_cast<GLsizeiptr>(vertices.size() * sizeof(glm::vec3));
-	auto const normals_offset = vertices_size;
+	//auto const normals_offset = vertices_size;
 	//	auto const normals_size = static_cast<GLsizeiptr>(normals.size() * sizeof(glm::vec3));
 	//auto const texcoords_offset = normals_offset + normals_size;
-	//auto const texcoords_size = static_cast<GLsizeiptr>(texcoords.size() * sizeof(glm::vec3));
+	//auto const texcoords_offset = vertices_size;
+	auto const texcoords_size = static_cast<GLsizeiptr>(texcoords.size() * sizeof(glm::vec3));
 	//auto const tangents_offset = texcoords_offset + texcoords_size;
 	//auto const tangents_size = static_cast<GLsizeiptr>(tangents.size() * sizeof(glm::vec3));
 	//auto const binormals_offset = tangents_offset + tangents_size;
