@@ -81,9 +81,9 @@ void
 edaf80::Assignment4::run()
 {
 	// Set up the camera
-	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
+	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 10.0f, 6.0f));
 	mCamera.mMouseSensitivity = 0.003f;
-	mCamera.mMovementSpeed = 0.025;
+	mCamera.mMovementSpeed = 0.25;
 
 	// Create the shader programs
 	ShaderProgramManager program_manager;
@@ -131,7 +131,7 @@ edaf80::Assignment4::run()
 	//
 
 	float sides = 500.0f;
-	auto const quad_shape = parametric_shapes::createFinerQuad(sides, sides,500u,500u);
+	auto const quad_shape = parametric_shapes::createFinerQuad(sides, sides,100u,100u);
 	if (quad_shape.vao == 0u) {
 		LogError("Failed to retrieve the quad mesh");
 		return;
@@ -212,7 +212,8 @@ edaf80::Assignment4::run()
 			fpsSamples = 0;
 		}
 		fpsSamples++;
-		ttime += ddeltatime / 1000;
+		ttime += ddeltatime / 1000.0f
+			;
 		auto& io = ImGui::GetIO();
 		inputHandler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
 
@@ -262,6 +263,8 @@ edaf80::Assignment4::run()
 		glClearDepthf(1.0f);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+		camera_position = mCamera.mWorld.GetTranslation();
 
 		if (!shader_reload_failed) {
 			quad.render(mCamera.GetWorldToClipMatrix(), quad.get_transform());

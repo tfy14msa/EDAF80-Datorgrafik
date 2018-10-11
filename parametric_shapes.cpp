@@ -180,15 +180,15 @@ parametric_shapes::createFinerQuad(unsigned int width, unsigned int height,unsig
 	auto current_position = glm::vec3(current_width, 0.0f, current_height);
 	
 	for (unsigned int i = 0u; i <= res_width; ++i) {
-		current_position = glm::vec3(current_width, 0.0f, current_height);
+		/*current_position = glm::vec3(current_width, 0.0f, current_height);
 		vertices[(res_height + 1)*i] = current_position;
-		texcoords[(res_height + 1)*i] = current_position; //same?
+		texcoords[(res_height + 1)*i] = glm::vec3(i*1.0f/res_width, 0.0f, j*1.0f/res_height); //same?*/
 		
 		for (unsigned int j = 0u; j <= res_height; ++j) {
 			current_height += d_height;
 			current_position = glm::vec3(current_width, 0.0f, current_height);
 			vertices[(res_height + 1)*i + j] = current_position;
-			texcoords[(res_height + 1)*i + j] = current_position; //same?
+			texcoords[(res_height + 1)*i + j] = glm::vec3(i*1.0f / res_width, 0.0f, j*1.0f / res_height); 
 		}
 		current_width += d_width;
 		current_height = 0.0f;
@@ -237,7 +237,7 @@ parametric_shapes::createFinerQuad(unsigned int width, unsigned int height,unsig
 	//auto const normals_offset = vertices_size;
 	//	auto const normals_size = static_cast<GLsizeiptr>(normals.size() * sizeof(glm::vec3));
 	//auto const texcoords_offset = normals_offset + normals_size;
-	//auto const texcoords_offset = vertices_size;
+	auto const texcoords_offset = vertices_size;
 	auto const texcoords_size = static_cast<GLsizeiptr>(texcoords.size() * sizeof(glm::vec3));
 	//auto const tangents_offset = texcoords_offset + texcoords_size;
 	//auto const tangents_size = static_cast<GLsizeiptr>(tangents.size() * sizeof(glm::vec3));
@@ -245,16 +245,25 @@ parametric_shapes::createFinerQuad(unsigned int width, unsigned int height,unsig
 	//auto const binormals_size = static_cast<GLsizeiptr>(binormals.size() * sizeof(glm::vec3));
 	auto const bo_size = static_cast<GLsizeiptr>(vertices_size
 		//	+ normals_size
-		//	+ texcoords_size
+			+ texcoords_size
 		//	+ tangents_size
 		//	+ binormals_size
 		);
 
-	glBufferData(GL_ARRAY_BUFFER, bo_size, vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, bo_size, NULL, GL_STATIC_DRAW);
 
+	glBufferSubData(GL_ARRAY_BUFFER, vertices_offset, vertices_size, static_cast<GLvoid const*>(vertices.data()));
 	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::vertices));
+	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::vertices), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(0x0));
 
-	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::vertices), 3u, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(0x0));
+
+	glBufferSubData(GL_ARRAY_BUFFER, texcoords_offset, texcoords_size, static_cast<GLvoid const*>(texcoords.data()));
+	glEnableVertexAttribArray(static_cast<unsigned int>(bonobo::shader_bindings::texcoords));
+	glVertexAttribPointer(static_cast<unsigned int>(bonobo::shader_bindings::texcoords), 3, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid const*>(texcoords_offset));
+
+
+
+	
 
 	glGenBuffers(1, &data.ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, data.ibo);
