@@ -8,7 +8,7 @@ uniform float ttime;
 in VS_OUT {
 	vec3 vertex;
 	vec3 normal;
-	//vec3 world_camera;
+	vec3 world_camera;
 	vec3 texcoords;
 	vec3 tangent;
 	vec3 binormal;
@@ -25,18 +25,19 @@ vec3 b = normalize(fs_in.binormal);
 vec3 t = normalize(fs_in.tangent);
 mat3 TBN = mat3(t,b,N);
 mat3 BTN = mat3(b,t,N);
-vec3 V = normalize(fs_in.vertex);
-//vec3 V = normalize(-fs_in.world_camera);
+//vec3 V = normalize(fs_in.vertex);
+vec3 V = normalize(fs_in.world_camera);
 
 vec4 color_deep = vec4(0.0,0.0,0.1,1.0);
 vec4 color_shallow = vec4(0.0,0.5,0.5,1.0);
 
 vec2 texScale = vec2(8, 4);
 float bumpTime = mod(ttime, 100.0);
-vec2 bumpSpeed = vec2(-0.05, 0);
-vec2 bumpCoord0 = fs_in.texcoords.xy*texScale + bumpTime*bumpSpeed;
-vec2 bumpCoord1 = fs_in.texcoords.xy*texScale*2 + bumpTime*bumpSpeed*4;
-vec2 bumpCoord2 = fs_in.texcoords.xy*texScale*4 + bumpTime*bumpSpeed*8;
+vec2 bumpSpeed = vec2(-0.05, 0);
+
+vec2 bumpCoord0 = fs_in.texcoords.xz*texScale + bumpTime*bumpSpeed;
+vec2 bumpCoord1 = fs_in.texcoords.xz*texScale*2 + bumpTime*bumpSpeed*4;
+vec2 bumpCoord2 = fs_in.texcoords.xz*texScale*4 + bumpTime*bumpSpeed*8;
 
 vec4 ni0 = texture(my_ripple,bumpCoord0)*2-1;
 vec4 ni1 = texture(my_ripple,bumpCoord1)*2-1;
@@ -46,7 +47,7 @@ vec3 nbump = BTN*nbump_tangent_space.xyz;
 
 
 float n1 = 1.33f; // n_water, air -> water
-float n2 = 1.0f/1.33f; //n_air, water -> air
+float n2 = 1.0f; //n_air, water -> air
 float R0 = pow((n1-n2)/(n1+n2),2);
 //float R0 = 0.02037; // air -> water
 float fresnel = R0 + (1-R0)*pow(1-max(0.0,dot(V,nbump)),5);
@@ -54,7 +55,7 @@ float fresnel = R0 + (1-R0)*pow(1-max(0.0,dot(V,nbump)),5);
 vec3 R = normalize(reflect(-V,nbump));
 vec4 reflection = texture(my_reflection_cube,R);
 
-vec3 r = refract(-V, nbump, n2/n1);
+vec3 r = refract(-V, nbump, n1/n2);
 vec4 refraction = texture(my_reflection_cube,r);
 
 
@@ -67,4 +68,6 @@ vec4 color_water = mix(color_deep,color_shallow,facing);
 
 	
 	frag_color = (color_water + reflection*fresnel + refraction*(1-fresnel));//*max(dot(L, nbump), 0.0)
+	//frag_color = reflection;
+	//frag_color.w = 1.0;
 }
