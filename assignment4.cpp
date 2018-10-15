@@ -195,6 +195,18 @@ edaf80::Assignment4::run()
 	//glCullFace(GL_BACK);
 
 
+
+	// Create the triangle
+	auto ship = Node();
+	auto const triangle_shape = parametric_shapes::createTriangle(50u, 50u, 2u);
+	if (triangle_shape.vao == 0u) {
+		LogError("Failed to retrieve the quad mesh");
+		return;
+	}
+	ship.set_geometry(triangle_shape);
+	ship.set_program(&fallback_shader, set_uniforms);
+	ship.set_translation(glm::vec3(100.0f, 100.0f, 100.0f));
+
 	f64 ddeltatime;
 	size_t fpsSamples = 0;
 	double nowTime, lastTime = GetTimeMilliseconds();
@@ -269,6 +281,7 @@ edaf80::Assignment4::run()
 		if (!shader_reload_failed) {
 			quad.render(mCamera.GetWorldToClipMatrix(), quad.get_transform());
 			area.render(mCamera.GetWorldToClipMatrix(), area.get_transform());
+			ship.render(mCamera.GetWorldToClipMatrix(), area.get_transform());
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

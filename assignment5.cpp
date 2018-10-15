@@ -9,6 +9,12 @@
 #include "core/Misc.h"
 #include "core/ShaderProgramManager.hpp"
 
+#include "core/node.hpp"
+#include "interpolation.hpp"
+#include "parametric_shapes.hpp"
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <imgui.h>
 #include <external/imgui_impl_glfw_gl3.h>
 #include <tinyfiledialogs.h>
@@ -40,6 +46,8 @@ edaf80::Assignment5::~Assignment5()
 void
 edaf80::Assignment5::run()
 {
+
+
 	// Set up the camera
 	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
 	mCamera.mMouseSensitivity = 0.003f;
@@ -61,9 +69,26 @@ edaf80::Assignment5::run()
 	//       (Check how it was done in assignment 3.)
 	//
 
+	auto camera_position = mCamera.mWorld.GetTranslation();
+	auto light_position = glm::vec3(-2.0f, 8.0f, 2.0f)*1.0f;
+	auto const set_uniforms = [&light_position, &camera_position](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+	};
+
+
 	//
 	// Todo: Load your geometry
 	//
+	// Create the triangle
+	auto ship = Node();
+	auto const triangle_shape = parametric_shapes::createTriangle(50u, 50u, 10u);
+	if (triangle_shape.vao == 0u) {
+		LogError("Failed to retrieve the quad mesh");
+		return;
+	}
+	ship.set_geometry(triangle_shape);
+	ship.set_program(&fallback_shader, set_uniforms);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -98,6 +123,9 @@ edaf80::Assignment5::run()
 		inputHandler.Advance();
 		mCamera.Update(ddeltatime, inputHandler);
 
+		if (inputHandler.GetKeycodeState(GLFW_KEY_1) & JUST_PRESSED) {
+			ship.set_program(&fallback_shader, set_uniforms);
+		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
@@ -129,6 +157,7 @@ edaf80::Assignment5::run()
 			//
 			// Todo: Render all your geometry here.
 			//
+			ship.render(mCamera.GetWorldToClipMatrix(), ship.get_transform());
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
