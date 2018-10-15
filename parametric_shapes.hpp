@@ -15,7 +15,7 @@ namespace parametric_shapes
 
 	bonobo::mesh_data createFinerQuad(unsigned int width, unsigned int height, unsigned int res_width, unsigned int res_height);
 
-	bonobo::mesh_data createTriangle(unsigned int width, unsigned int height, unsigned int res);
+	bonobo::mesh_data createTriangle(float width, float height, float res);
 
 	//! \brief Create a sphere for some tesselation level and make it
 	//!        available to OpenGL.

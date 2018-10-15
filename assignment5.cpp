@@ -13,6 +13,7 @@
 #include "interpolation.hpp"
 #include "parametric_shapes.hpp"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <imgui.h>
@@ -51,7 +52,7 @@ edaf80::Assignment5::run()
 	// Set up the camera
 	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
 	mCamera.mMouseSensitivity = 0.003f;
-	mCamera.mMovementSpeed = 0.025;
+	mCamera.mMovementSpeed = 0.25;
 
 	// Create the shader programs
 	ShaderProgramManager program_manager;
@@ -63,6 +64,13 @@ edaf80::Assignment5::run()
 		LogError("Failed to load fallback shader");
 		return;
 	}
+
+	GLuint skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/cubemap.vert" },
+	{ ShaderType::fragment, "EDAF80/cubemap.frag" } },
+		skybox_shader);
+	if (skybox_shader == 0u)
+		LogError("Failed to load skybox shader");
 
 	//
 	// Todo: Insert the creation of other shader programs.
@@ -81,14 +89,52 @@ edaf80::Assignment5::run()
 	// Todo: Load your geometry
 	//
 	// Create the triangle
+	float tr_sides = 50.0f;
 	auto ship = Node();
-	auto const triangle_shape = parametric_shapes::createTriangle(50u, 50u, 10u);
+	auto const triangle_shape = parametric_shapes::createTriangle(tr_sides, tr_sides, 10u);
 	if (triangle_shape.vao == 0u) {
 		LogError("Failed to retrieve the quad mesh");
 		return;
 	}
 	ship.set_geometry(triangle_shape);
 	ship.set_program(&fallback_shader, set_uniforms);
+	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 500.0f);
+	if (sphere_shape.vao == 0u) {
+		LogError("Failed to retrieve the sphere mesh");
+		return;
+	}
+	ship.rotate_x(glm::two_pi<float>()/4.0f);
+	auto area = Node();
+	area.set_geometry(sphere_shape);
+
+
+	std::string stringe = "cloudyhills";
+	auto my_reflection_cube_id = bonobo::loadTextureCubeMap(stringe + "/posx.png", stringe + "/negx.png",
+		stringe + "/posy.png", stringe + "/negy.png", stringe + "/posz.png", stringe + "/negz.png", true);
+	if (my_reflection_cube_id == 0u) {
+		LogError("Failed to load my_cube_map texture");
+		return;
+	}
+	ship.add_texture("my_reflection_cube", my_reflection_cube_id, GL_TEXTURE_CUBE_MAP);
+
+	GLuint const ripple_texture = bonobo::loadTexture2D("waves.png");
+	ship.add_texture("my_ripple", ripple_texture, GL_TEXTURE_2D);
+
+
+
+
+
+	float ttime = 0.0f;
+	auto const water_set_uniforms = [&light_position, &camera_position, &ttime](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
+		glUniform1f(glGetUniformLocation(program, "ttime"), ttime);
+	};
+
+	ship.set_program(&fallback_shader, set_uniforms);
+	area.set_program(&skybox_shader, water_set_uniforms);
+
+
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -126,6 +172,9 @@ edaf80::Assignment5::run()
 		if (inputHandler.GetKeycodeState(GLFW_KEY_1) & JUST_PRESSED) {
 			ship.set_program(&fallback_shader, set_uniforms);
 		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_1) & JUST_PRESSED) {
+			ship.set_program(&skybox_shader, water_set_uniforms);
+		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
@@ -153,11 +202,45 @@ edaf80::Assignment5::run()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
+
+
+		camera_position = mCamera.mWorld.GetTranslation();
+
+
+
+
+
+		float anglex = mCamera.mRotation.x + 1.57; // The angle of the rotation is always 90 degrees. Minus/plus from direction. 
+		float cosvalx = std::cos(anglex);
+		float sinvalx = std::sin(anglex);
+		float angley = mCamera.mRotation.y - 1.57;
+		float cosvaly = std::cos(angley);
+		float sinvaly = std::sin(angley);
+
+		// Why reserved y and z? Because the angle is measured in xz plane.
+		// Why minus in formula? It eihter has to be minus in x if
+		// +1.57 in anglex, or minus in z and -1.57 in anglex. You choose.
+
+		float x = camera_position.x - 31.0f*sinvaly*cosvalx;
+		float z = camera_position.z + 31.0f*sinvaly*sinvalx;
+		float y = camera_position.y + 31.0f*cosvaly;
+		//float x = camera_position.x - 31.0f*(cosvalx); // Minus due to using z and x axis. 
+		//float z = camera_position.z + 31.0f*(sinvalx);
+
+		//ship.set_translation(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
+		ship.set_translation(glm::vec3(x-tr_sides/2.0f, y-6.0f, z-tr_sides));
+		//mCamera.mWorld.LookAt(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
+
+
+
+
+
 		if (!shader_reload_failed) {
 			//
 			// Todo: Render all your geometry here.
 			//
 			ship.render(mCamera.GetWorldToClipMatrix(), ship.get_transform());
+			area.render(mCamera.GetWorldToClipMatrix(), area.get_transform());
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

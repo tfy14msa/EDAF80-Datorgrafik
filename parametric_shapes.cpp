@@ -281,7 +281,7 @@ parametric_shapes::createFinerQuad(unsigned int width, unsigned int height,unsig
 }
 
 bonobo::mesh_data
-parametric_shapes::createTriangle(unsigned int width, unsigned int height, unsigned int res)
+parametric_shapes::createTriangle(float width, float height, float res)
 {
 	
 	auto vertices_nb = 3;
@@ -301,42 +301,47 @@ parametric_shapes::createTriangle(unsigned int width, unsigned int height, unsig
 	// generate vertices iteratively
 
 
-	float current_width = 0.0f, current_height = 0.0,
+	float current_width = 0.0f, current_height = 0.0f,
 		d_width = width / res, d_height = height / res;
-	auto current_position = glm::vec3(current_width,  current_height, 0.0f);
-
-	for (unsigned int i = 0u; i <= res; ++i) { // height
-		current_width = i*width / (res + 2);
+	auto current_position = glm::vec3(0.0f,  current_height, 0.0f);
+	int index = 0u;
+	for (int i = 0; i <= res; ++i) { // height
+		current_width =  (float(i)/res)*(width/2.0f);
 		for (unsigned int j = 0u; j <= (res-i); ++j) { // width
 			
 			current_position = glm::vec3(current_width, current_height, 0.0f);
-			vertices[(res + 1)*i + j] = current_position;
-			texcoords[(res + 1)*i + j] = glm::vec3(i*1.0f / res,  j*1.0f / res, 0.0f);
+			vertices[index] = current_position;
+			texcoords[index] = glm::vec3(i*1.0f / res,  j*1.0f / res, 0.0f);
 			current_width += d_width;
+			index++;
 		}
 		current_height += d_height;
 	}
 
 	// create index array
 	auto indices = std::vector<glm::uvec3>(res*res);
-	int index = 0u;
+	index = 0u;
 
+	int lower_row = 0;
+	int upper_row = res+1;
 	for (unsigned int i = 0u; i < res; ++i) {
-
 		for (unsigned int j = 0u; j < (res-i); ++j) {
-			indices[index] = glm::uvec3(i * (res + 1) + j,
-				i * (res + 1) + j + 1,
-				(i + 1) * (res + 1 - i) + j);
+			indices[index] = glm::uvec3(lower_row + j,
+				lower_row + j + 1,
+				upper_row + j);
 			++index;
 			
 				
 			if (j < res - i - 1) {
-				indices[index] = glm::uvec3(i * (res + 1) + j + 1,
-					(i + 1) * (res + 1 - i) + j + 1,
-					(i + 1) * (res + 1 - i) + j);
+				indices[index] = glm::uvec3(lower_row + j + 1,
+					upper_row + j + 1,
+					upper_row + j);
+				++index;
 			}
-			++index;
+			
 		}
+		lower_row = upper_row;
+		upper_row += res - i;
 
 	}
 
