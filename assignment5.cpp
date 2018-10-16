@@ -20,6 +20,11 @@
 #include <external/imgui_impl_glfw_gl3.h>
 #include <tinyfiledialogs.h>
 
+
+
+
+
+
 #include <stdexcept>
 
 edaf80::Assignment5::Assignment5() :
@@ -39,6 +44,18 @@ edaf80::Assignment5::Assignment5() :
 	}
 }
 
+bool testCollison(glm::vec3 p1, float r1, glm::vec3 p2, float r2)
+{
+	auto p = p1 - p2;
+	//float psum = 0;
+	//for (int i = 0; i < p1.length();i++) {
+	//	psum += p[i] * p[i];
+	//}
+	//psum = sqrt(psum);
+	float psum = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
+	return psum < r1 + r2;
+}
+
 edaf80::Assignment5::~Assignment5()
 {
 	Log::View::Destroy();
@@ -50,7 +67,7 @@ edaf80::Assignment5::run()
 
 
 	// Set up the camera
-	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
+	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.0f));
 	mCamera.mMouseSensitivity = 0.003f;
 	mCamera.mMovementSpeed = 0.25;
 
@@ -107,12 +124,33 @@ edaf80::Assignment5::run()
 	if (triangle_shape.vao == 0u) {
 		LogError("Failed to retrieve the quad mesh");
 		return;
-	}auto const sphere_shape = parametric_shapes::createSphere(300.0f, 300.0f, 500.0f);
+	}
+	float area_radius = 500.0f;
+	auto const sphere_shape = parametric_shapes::createSphere(300.0f, 300.0f, area_radius);
 	if (sphere_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
 		return;
 	}
+
+
+	//
+	// Load the sphere geometry
+	//
+	std::vector<bonobo::mesh_data> const objects = bonobo::loadObjects("spaceship.obj");
+	/*if (objects.empty()) {
+		LogError("Failed to load the sphere geometry: exiting.");
+
+		Log::View::Destroy();
+		Log::Destroy();
+
+		return EXIT_FAILURE;
+	}*/
+	bonobo::mesh_data const& spaceship = objects.front();
+
+
+
 	ship.set_geometry(triangle_shape);
+	//ship.set_geometry(spaceship);
 	ship.set_program(&fallback_shader, set_uniforms);
 	
 	ship.rotate_x(glm::two_pi<float>()/4.0f);
@@ -121,7 +159,7 @@ edaf80::Assignment5::run()
 	area.set_geometry(sphere_shape);
 
 
-	std::string stringe = "cloudyhills";
+	std::string stringe = "snow";
 	auto my_reflection_cube_id = bonobo::loadTextureCubeMap(stringe + "/posx.png", stringe + "/negx.png",
 		stringe + "/posy.png", stringe + "/negy.png", stringe + "/posz.png", stringe + "/negz.png", true);
 	if (my_reflection_cube_id == 0u) {
@@ -252,12 +290,17 @@ edaf80::Assignment5::run()
 		float pi = glm::pi<float>();
 
 		//ship.set_translation(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
-		ship.set_translation(glm::vec3(x, y-9.0f, z+tr_sides/16.0f));
+		auto ship_position = glm::vec3(x, y - 9.0f, z + tr_sides / 16.0f);
+		ship.set_translation(ship_position);
 		ship.set_rotation_x(-mCamera.mRotation.y + pi_half);
 		//mCamera.mWorld.LookAt(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
 		ship.set_rotation_y(mCamera.mRotation.x + pi);
 
-
+		if (!testCollison(ship_position, tr_sides, glm::vec3(0.0f,0.0f,0.0f), area_radius)) {
+			printf("\n You suck!! \n Ship crashed");
+			//break;
+			mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.0f));
+		}
 
 
 		if (!shader_reload_failed) {
