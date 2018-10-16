@@ -313,7 +313,7 @@ parametric_shapes::createTriangle(float width, float height, float res)
 		current_theta = (2.0f*current_width-width)/width*theta/2.0f;
 		for (unsigned int j = 0u; j <= (res-i); ++j) { // width
 			
-			current_position = glm::vec3(current_width, current_height, width/2.0f*(1.0f-std::cos(current_theta)));
+			current_position = glm::vec3(current_width-width/2, current_height, width/2.0f*(1.0f-std::cos(current_theta)));
 			vertices[index] = current_position;
 			texcoords[index] = glm::vec3(i*1.0f / res,  j*1.0f / res, 0.0f);
 			current_width += d_width;

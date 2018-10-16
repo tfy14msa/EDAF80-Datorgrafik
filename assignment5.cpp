@@ -64,7 +64,18 @@ edaf80::Assignment5::run()
 		LogError("Failed to load fallback shader");
 		return;
 	}
-
+	GLuint default_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/default.vert" },
+	{ ShaderType::fragment, "EDAF80/default.frag" } },
+		default_shader);
+	if (default_shader == 0u)
+		LogError("Failed to load default shader");
+	GLuint diffuse_shader = 0u;
+	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/diffuse.vert" },
+	{ ShaderType::fragment, "EDAF80/diffuse.frag" } },
+		diffuse_shader);
+	if (diffuse_shader == 0u)
+		LogError("Failed to load diffuse shader");
 	GLuint skybox_shader = 0u;
 	program_manager.CreateAndRegisterProgram({ { ShaderType::vertex, "EDAF80/cubemap.vert" },
 	{ ShaderType::fragment, "EDAF80/cubemap.frag" } },
@@ -91,7 +102,8 @@ edaf80::Assignment5::run()
 	// Create the triangle
 	float tr_sides = 20.0f;
 	auto ship = Node();
-	auto const triangle_shape = parametric_shapes::createTriangle(tr_sides, tr_sides, 10u);
+	auto const triangle_shape = //parametric_shapes::createSphere(100.0f, 100.0f, 5.0f);
+		parametric_shapes::createTriangle(tr_sides, tr_sides, 100.0f);
 	if (triangle_shape.vao == 0u) {
 		LogError("Failed to retrieve the quad mesh");
 		return;
@@ -116,12 +128,13 @@ edaf80::Assignment5::run()
 		LogError("Failed to load my_cube_map texture");
 		return;
 	}
-	//ship.add_texture("my_reflection_cube", my_reflection_cube_id, GL_TEXTURE_CUBE_MAP);
+	area.add_texture("my_reflection_cube", my_reflection_cube_id, GL_TEXTURE_CUBE_MAP);
 
 	GLuint const ripple_texture = bonobo::loadTexture2D("waves.png");
-	ship.add_texture("my_ripple", ripple_texture, GL_TEXTURE_2D);
+	area.add_texture("my_ripple", ripple_texture, GL_TEXTURE_2D);
 
-	GLuint const ship_texture = bonobo::loadTexture2D("ship1.png");
+	glActiveTexture(GL_TEXTURE1);
+	GLuint const ship_texture = bonobo::loadTexture2D("SWtie.png");
 	ship.add_texture("diffuse", ship_texture, GL_TEXTURE_2D);
 
 
@@ -175,6 +188,12 @@ edaf80::Assignment5::run()
 			ship.set_program(&fallback_shader, set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_2) & JUST_PRESSED) {
+			ship.set_program(&default_shader, set_uniforms);
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_3) & JUST_PRESSED) {
+			ship.set_program(&diffuse_shader, set_uniforms);
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_4) & JUST_PRESSED) {
 			ship.set_program(&skybox_shader, water_set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
@@ -229,13 +248,14 @@ edaf80::Assignment5::run()
 		//float x = camera_position.x - 31.0f*(cosvalx); // Minus due to using z and x axis. 
 		//float z = camera_position.z + 31.0f*(sinvalx);
 
+		float pi_half = glm::half_pi<float>();
+		float pi = glm::pi<float>();
+
 		//ship.set_translation(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
-		ship.set_translation(glm::vec3(x+tr_sides/2.0f, y-6.0f, z+tr_sides/16.0f));
-	
+		ship.set_translation(glm::vec3(x, y-9.0f, z+tr_sides/16.0f));
+		ship.set_rotation_x(-mCamera.mRotation.y + pi_half);
 		//mCamera.mWorld.LookAt(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
-		/*ship.set_rotation_x(mCamera.mRotation.y );
-		ship.set_rotation_y(mCamera.mRotation.x );*/
-		//ship.set_rotation_z(mCamera.mRotation.z);
+		ship.set_rotation_y(mCamera.mRotation.x + pi);
 
 
 
