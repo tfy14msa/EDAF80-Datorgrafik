@@ -15,6 +15,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <stack>
+#include <cstdlib>
 
 #include <imgui.h>
 #include <external/imgui_impl_glfw_gl3.h>
@@ -54,6 +56,33 @@ bool testCollison(glm::vec3 p1, float r1, glm::vec3 p2, float r2)
 	//psum = sqrt(psum);
 	float psum = sqrt(p.x*p.x + p.y*p.y + p.z*p.z);
 	return psum < r1 + r2;
+}
+
+Node createAsteroid(Node area, unsigned int area_radius, unsigned int max_radius) {
+
+	auto asteroid = Node();
+	
+	int x = rand(), y = rand(), z = rand();
+	x = x % (2 * area_radius) - area_radius,
+		y = y % (2 * area_radius) - area_radius,
+		z = z % (2 * area_radius) - area_radius;
+	/*float x = -area_radius + rand() % (2*area_radius);
+	float y = -area_radius + rand() % (2*area_radius);
+	float z = -area_radius + rand() % (2*area_radius );*/
+
+	auto init_pos = glm::vec3(x, y, z);
+	asteroid.set_translation(init_pos);
+
+	int radius = rand() % max_radius;
+	auto const asteroid_shape = parametric_shapes::createSphere(300.0f, 300.0f, radius);
+	if (asteroid_shape.vao == 0u) {
+		LogError("Failed to retrieve the sphere mesh");
+	}
+	asteroid.set_geometry(asteroid_shape);
+
+	GLuint const asteroid_texture = bonobo::loadTexture2D("venusmap.png");
+	asteroid.add_texture("diffuse", asteroid_texture, GL_PROXY_TEXTURE_2D);
+	return asteroid;
 }
 
 edaf80::Assignment5::~Assignment5()
@@ -136,16 +165,16 @@ edaf80::Assignment5::run()
 	//
 	// Load the sphere geometry
 	//
-	std::vector<bonobo::mesh_data> const objects = bonobo::loadObjects("spaceship.obj");
-	/*if (objects.empty()) {
+	/*std::vector<bonobo::mesh_data> const objects = bonobo::loadObjects("spaceship.obj");
+	if (objects.empty()) {
 		LogError("Failed to load the sphere geometry: exiting.");
 
 		Log::View::Destroy();
 		Log::Destroy();
 
 		return EXIT_FAILURE;
-	}*/
-	bonobo::mesh_data const& spaceship = objects.front();
+	}
+	bonobo::mesh_data const& spaceship = objects.front();*/
 
 
 
@@ -187,7 +216,8 @@ edaf80::Assignment5::run()
 	ship.set_program(&fallback_shader, set_uniforms);
 	area.set_program(&skybox_shader, set_uniforms);
 
-
+	Node asteroid = createAsteroid(area, area_radius, 50u);
+	area.add_child(&asteroid);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -309,6 +339,31 @@ edaf80::Assignment5::run()
 			//
 			ship.render(mCamera.GetWorldToClipMatrix(), ship.get_transform());
 			area.render(mCamera.GetWorldToClipMatrix(), area.get_transform());
+			
+			// Traverse the scene graph and render all nodes
+			//
+			std::stack<Node const*> node_stack({ &area });
+			std::stack<glm::mat4> matrix_stack({ glm::mat4(1.0f) });
+
+			Node const* current_node = &area;
+
+			while (!node_stack.empty()) {
+				current_node = node_stack.top();
+				glm::mat4 matrix_stack_transform = matrix_stack.top()*current_node->get_transform();
+
+				if (current_node != &area) {
+					current_node->render(mCamera.GetWorldToClipMatrix(), matrix_stack_transform, default_shader, [](GLuint /*program*/) {});
+				}
+				node_stack.pop();
+				matrix_stack.pop();
+
+				for (int i = 0; i < current_node->get_children_nb(); i++) {
+					Node const* child = current_node->get_child(i);
+					matrix_stack.push(matrix_stack_transform);
+					node_stack.push(child);
+				}
+
+			}
 		}
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
