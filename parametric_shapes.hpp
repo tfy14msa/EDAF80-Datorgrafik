@@ -25,7 +25,7 @@ namespace parametric_shapes
 	//! @param radius radius of the sphere
 	//! @return wrapper around OpenGL objects' name containing the geometry
 	//!         data
-	bonobo::mesh_data createSphere(unsigned int const res_theta, unsigned int const res_phi, float const radius);
+	bonobo::mesh_data createSphere(float const res_theta, float const res_phi, float const radius);
 
 	//! \brief Create a torus for some tesselation level and make it
 	//!        available to OpenGL.

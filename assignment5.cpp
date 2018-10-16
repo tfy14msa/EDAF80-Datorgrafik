@@ -78,7 +78,7 @@ edaf80::Assignment5::run()
 	//
 
 	auto camera_position = mCamera.mWorld.GetTranslation();
-	auto light_position = glm::vec3(-2.0f, 8.0f, 2.0f)*1.0f;
+	auto light_position = glm::vec3(-2.0f, 8.0f, 2.0f)*1000.0f;
 	auto const set_uniforms = [&light_position, &camera_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
@@ -89,21 +89,22 @@ edaf80::Assignment5::run()
 	// Todo: Load your geometry
 	//
 	// Create the triangle
-	float tr_sides = 50.0f;
+	float tr_sides = 20.0f;
 	auto ship = Node();
 	auto const triangle_shape = parametric_shapes::createTriangle(tr_sides, tr_sides, 10u);
 	if (triangle_shape.vao == 0u) {
 		LogError("Failed to retrieve the quad mesh");
 		return;
-	}
-	ship.set_geometry(triangle_shape);
-	ship.set_program(&fallback_shader, set_uniforms);
-	auto const sphere_shape = parametric_shapes::createSphere(100u, 100u, 500.0f);
+	}auto const sphere_shape = parametric_shapes::createSphere(300.0f, 300.0f, 500.0f);
 	if (sphere_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
 		return;
 	}
+	ship.set_geometry(triangle_shape);
+	ship.set_program(&fallback_shader, set_uniforms);
+	
 	ship.rotate_x(glm::two_pi<float>()/4.0f);
+	ship.rotate_y(glm::two_pi<float>() / 2.0f);
 	auto area = Node();
 	area.set_geometry(sphere_shape);
 
@@ -115,12 +116,13 @@ edaf80::Assignment5::run()
 		LogError("Failed to load my_cube_map texture");
 		return;
 	}
-	ship.add_texture("my_reflection_cube", my_reflection_cube_id, GL_TEXTURE_CUBE_MAP);
+	//ship.add_texture("my_reflection_cube", my_reflection_cube_id, GL_TEXTURE_CUBE_MAP);
 
 	GLuint const ripple_texture = bonobo::loadTexture2D("waves.png");
 	ship.add_texture("my_ripple", ripple_texture, GL_TEXTURE_2D);
 
-
+	GLuint const ship_texture = bonobo::loadTexture2D("ship1.png");
+	ship.add_texture("diffuse", ship_texture, GL_TEXTURE_2D);
 
 
 
@@ -132,7 +134,7 @@ edaf80::Assignment5::run()
 	};
 
 	ship.set_program(&fallback_shader, set_uniforms);
-	area.set_program(&skybox_shader, water_set_uniforms);
+	area.set_program(&skybox_shader, set_uniforms);
 
 
 
@@ -172,7 +174,7 @@ edaf80::Assignment5::run()
 		if (inputHandler.GetKeycodeState(GLFW_KEY_1) & JUST_PRESSED) {
 			ship.set_program(&fallback_shader, set_uniforms);
 		}
-		if (inputHandler.GetKeycodeState(GLFW_KEY_1) & JUST_PRESSED) {
+		if (inputHandler.GetKeycodeState(GLFW_KEY_2) & JUST_PRESSED) {
 			ship.set_program(&skybox_shader, water_set_uniforms);
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
@@ -228,9 +230,12 @@ edaf80::Assignment5::run()
 		//float z = camera_position.z + 31.0f*(sinvalx);
 
 		//ship.set_translation(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
-		ship.set_translation(glm::vec3(x-tr_sides/2.0f, y-6.0f, z-tr_sides));
+		ship.set_translation(glm::vec3(x+tr_sides/2.0f, y-6.0f, z+tr_sides/16.0f));
+	
 		//mCamera.mWorld.LookAt(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
-
+		/*ship.set_rotation_x(mCamera.mRotation.y );
+		ship.set_rotation_y(mCamera.mRotation.x );*/
+		//ship.set_rotation_z(mCamera.mRotation.z);
 
 
 

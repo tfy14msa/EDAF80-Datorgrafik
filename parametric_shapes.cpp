@@ -289,7 +289,6 @@ parametric_shapes::createTriangle(float width, float height, float res)
 		vertices_nb += i;
 	}
 
-
 	auto vertices = std::vector<glm::vec3>(vertices_nb);
 	//auto normals = std::vector<glm::vec3>(vertices_nb);
 	auto texcoords = std::vector<glm::vec3>(vertices_nb);
@@ -303,16 +302,22 @@ parametric_shapes::createTriangle(float width, float height, float res)
 
 	float current_width = 0.0f, current_height = 0.0f,
 		d_width = width / res, d_height = height / res;
+
+	float theta = glm::pi<float>() / 3.0f,
+		d_theta = theta / res, current_theta = -theta/2.0f;
+
 	auto current_position = glm::vec3(0.0f,  current_height, 0.0f);
 	int index = 0u;
 	for (int i = 0; i <= res; ++i) { // height
 		current_width =  (float(i)/res)*(width/2.0f);
+		current_theta = (2.0f*current_width-width)/width*theta/2.0f;
 		for (unsigned int j = 0u; j <= (res-i); ++j) { // width
 			
-			current_position = glm::vec3(current_width, current_height, 0.0f);
+			current_position = glm::vec3(current_width, current_height, width/2.0f*(1.0f-std::cos(current_theta)));
 			vertices[index] = current_position;
 			texcoords[index] = glm::vec3(i*1.0f / res,  j*1.0f / res, 0.0f);
 			current_width += d_width;
+			current_theta += d_theta;
 			index++;
 		}
 		current_height += d_height;
@@ -410,8 +415,8 @@ parametric_shapes::createTriangle(float width, float height, float res)
 	return data;
 }
 bonobo::mesh_data
-parametric_shapes::createSphere(unsigned int const res_theta,
-                                unsigned int const res_phi, float const radius)
+parametric_shapes::createSphere(float const res_theta,
+                                float const res_phi, float const radius)
 {
 	auto const vertices_nb = res_phi * res_theta;
 
@@ -422,10 +427,10 @@ parametric_shapes::createSphere(unsigned int const res_theta,
 	auto binormals = std::vector<glm::vec3>(vertices_nb);
 
 	float theta = 0.0f,                                                           // 'stepping'-variable for theta: will go 0 - 2PI
-		dtheta = glm::two_pi<float>() / (static_cast<float>(res_theta) - 1.0f); // step size, depending on the resolution
+		dtheta = glm::two_pi<float>() / (res_theta - 1.0f); // step size, depending on the resolution
 
 	float phi = 0.0f,                                                           // 'stepping'-variable for phi: will go 0 - PI
-		dphi = glm::pi<float>() / (static_cast<float>(res_phi) - 1.0f); // step size, depending on the resolution
+		dphi = glm::pi<float>() / (res_phi - 1.0f); // step size, depending on the resolution
 
 																						   // generate vertices iteratively
 	size_t index = 0u;
