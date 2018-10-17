@@ -76,7 +76,7 @@ Node createAsteroid(Node area, unsigned int area_radius, unsigned int max_radius
 
 	auto asteroid = Node();
 
-	int radius = rand() % max_radius;
+	int radius = 5 + rand() % (max_radius-4);
 
 	auto init_pos = areaCoordinates(area_radius, radius);
 	asteroid.set_translation(init_pos);
@@ -349,9 +349,9 @@ edaf80::Assignment5::run()
 		while (!node_stack.empty()) {
 			current_node = node_stack.top();
 			glm::mat4 matrix_stack_transform = matrix_stack.top()*current_node->get_transform();
-
-			if (current_node != &area && testCollison(ship_position, tr_sides, current_node->get_translation(), )) {
-				
+			auto node_pos = current_node->get_translation();
+			if (current_node != &area && testCollison(ship_position, tr_sides, node_pos, 50u)) {
+				printf("\nfuck you!!!!");
 			}
 			node_stack.pop();
 			matrix_stack.pop();
