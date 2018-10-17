@@ -66,13 +66,7 @@ glm::vec3 areaCoordinates(unsigned int area_radius, unsigned int object_radius) 
 	int ylim = xlim - abs(x);
 	y = rand() % (2 * ylim) - ylim;
 	int zlim = ylim - abs(y);
-	if (zlim == 0) {
-		z = 0;
-	}
-	else {
-			z = rand() % (2 * zlim) - zlim;
-	}
-	
+	z = rand() % (2 * zlim) - zlim;
 	
 	//printf("\n%d, %d, %d", x, y, x);
 	return glm::vec3(x, y, z);
@@ -84,26 +78,13 @@ glm::vec3 areaCoordinates(unsigned int area_radius, unsigned int object_radius) 
 
 }
 
-//Node createAsteroid(Node area, unsigned int area_radius, unsigned int max_radius, Node asteroid_vec[], int asteroid_radius[], int nbr_of_visible_asteroids) {
-Node createAsteroid(Node area, unsigned int area_radius, unsigned int max_radius, Node asteroid_vec[], int nbr_asteroids) {
+Node createAsteroid(Node area, unsigned int area_radius, unsigned int max_radius) {
+
 	auto asteroid = Node();
 
-	//int radius = 5 + rand() % (max_radius-4);
-	int radius = max_radius;
+	int radius = 5 + rand() % (max_radius-4);
 
-	glm::vec3 init_pos;
-	if (nbr_asteroids == 0) {
-		init_pos = areaCoordinates(area_radius, radius);
-	}
-	else {
-		bool free_space = false;
-		while (!free_space) {
-			init_pos = areaCoordinates(area_radius, radius);
-			for (int i = 0; i < nbr_asteroids; i++) {
-				free_space = !testCollison(asteroid_vec[i].get_translation(), radius, init_pos, radius);
-			}
-		}
-	}
+	auto init_pos = areaCoordinates(area_radius, radius);
 	asteroid.set_translation(init_pos);
 
 	auto const asteroid_shape = parametric_shapes::createSphere(300.0f, 300.0f, radius);
@@ -251,19 +232,11 @@ edaf80::Assignment5::run()
 	area.set_program(&skybox_shader, set_uniforms);
 
 	int max_radius = 50u;
-	int const max_asteroids = 20;
-	int nbr_asteroids =2;
-	Node asteroid [max_asteroids];
-	//int asteroid_radius[max_asteroids];
-	for (int i = 0; i < nbr_asteroids; i++) {
-	asteroid[i] = createAsteroid(area, area_radius, max_radius, asteroid, i);
+	auto asteroid = Node();
+	for (int i = 0; i < 20; i++) {
+	asteroid = createAsteroid(area, area_radius, max_radius);
+	area.add_child(&asteroid);
 	}
-
-
-
-
-
-
 	glEnable(GL_DEPTH_TEST);
 
 	// Enable face culling to improve performance:
@@ -271,6 +244,7 @@ edaf80::Assignment5::run()
 	//glCullFace(GL_FRONT);
 	//glCullFace(GL_BACK);
 
+	bool printcoord = true;
 
 	f64 ddeltatime;
 	size_t fpsSamples = 0;
@@ -303,12 +277,12 @@ edaf80::Assignment5::run()
 		if (inputHandler.GetKeycodeState(GLFW_KEY_2) & JUST_PRESSED) {
 			ship.set_program(&default_shader, set_uniforms);
 		}
-		/*	if (inputHandler.GetKeycodeState(GLFW_KEY_3) & JUST_PRESSED) {
-				ship.set_program(&diffuse_shader, set_uniforms);
-			}
-			if (inputHandler.GetKeycodeState(GLFW_KEY_4) & JUST_PRESSED) {
-				ship.set_program(&skybox_shader, water_set_uniforms);
-			}*/
+		if (inputHandler.GetKeycodeState(GLFW_KEY_3) & JUST_PRESSED) {
+			ship.set_program(&diffuse_shader, set_uniforms);
+		}
+		if (inputHandler.GetKeycodeState(GLFW_KEY_4) & JUST_PRESSED) {
+			ship.set_program(&skybox_shader, water_set_uniforms);
+		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
@@ -317,9 +291,9 @@ edaf80::Assignment5::run()
 			shader_reload_failed = !program_manager.ReloadAllPrograms();
 			if (shader_reload_failed)
 				tinyfd_notifyPopup("Shader Program Reload Error",
-					"An error occurred while reloading shader programs; see the logs for details.\n"
-					"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
-					"error");
+				                   "An error occurred while reloading shader programs; see the logs for details.\n"
+				                   "Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
+				                   "error");
 		}
 
 		ImGui_ImplGlfwGL3_NewFrame();
@@ -371,36 +345,43 @@ edaf80::Assignment5::run()
 		//mCamera.mWorld.LookAt(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
 		ship.set_rotation_y(mCamera.mRotation.x + pi);
 
-		//test collisions
-		//ship-area
-		if (!testCollison(ship_position, tr_sides, area.get_translation(), area_radius)) {
-			printf("\nShip crashed into surroundings");
-			mCamera.mWorld.SetTranslate(area.get_translation());
+	
+
+		std::stack<Node const*> node_stack({ &area });
+		std::stack<glm::mat4> matrix_stack({ glm::mat4(1.0f) });
+
+		if (!testCollison(ship_position, tr_sides, node_stack.top()->get_translation(), area_radius)) {
+			printf("\n You suck!! \n Ship crashed");
+			//break;
+			mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.0f));
 		}
-		/*//ship-asteroids
-		for (int i = 0; i < nbr_asteroids; i++) {
-			if (testCollison(ship_position, tr_sides, asteroid[i].get_translation(), max_radius)) {
-				printf("\nShip crashed into asteroid");
-				mCamera.mWorld.SetTranslate(area.get_translation());
-			}
-		}
-		//asteroids
-		for (int i = 0; i < nbr_asteroids; i++) {
-			// to area
-			if (!testCollison(asteroid[i].get_translation(), max_radius, area.get_translation(), area_radius)) {
-				printf("\nAsteroid crashed into surroundings");
-				//What to do? mCamera.mWorld.SetTranslate(area.get_translation());
-			}
-			// to other asteroids
-			for (int j = i+1; j < nbr_asteroids; j++) {
-				if (testCollison(asteroid[i].get_translation(), max_radius, asteroid[j].get_translation(), max_radius)) {
-					printf("\nAsteroid crashed into asteroid");
-					//What to do? mCamera.mWorld.SetTranslate(area.get_translation());
-				}
-			}
-		}*/
 
 
+
+		Node const* current_node = &area;
+
+		while (!node_stack.empty()) {
+			current_node = node_stack.top();
+			glm::mat4 matrix_stack_transform = matrix_stack.top()*current_node->get_transform();
+			auto node_pos = current_node->get_translation();
+			//if (printcoord) {
+			//	std::cout << glm::to_string(node_pos) << std::endl;
+			//}
+			if (current_node != &area && testCollison(ship_position, tr_sides, node_pos, 50u)) {
+				printf("\ncrashed into asteroid!!!!");
+				mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.0f));
+			}
+			node_stack.pop();
+			matrix_stack.pop();
+
+			for (int i = 0; i < current_node->get_children_nb(); i++) {
+				Node const* child = current_node->get_child(i);
+				matrix_stack.push(matrix_stack_transform);
+				node_stack.push(child);
+			}
+
+		}
+		//printcoord = false;
 
 		if (!shader_reload_failed) {
 			//
@@ -408,48 +389,47 @@ edaf80::Assignment5::run()
 			//
 			ship.render(mCamera.GetWorldToClipMatrix(), ship.get_transform());
 			area.render(mCamera.GetWorldToClipMatrix(), area.get_transform());
+			
+			// Traverse the scene graph and render all nodes
+			//
+			std::stack<Node const*> node_stack({ &area });
+			std::stack<glm::mat4> matrix_stack({ glm::mat4(1.0f) });
 
-			for (int i = 0; i < nbr_asteroids; i++) {
-				auto asteroid_pos = asteroid[i].get_translation();
+			Node const* current_node = &area;
 
-				// ship - asteroid
-				if (testCollison(ship_position, tr_sides, asteroid_pos, max_radius)) {
-					printf("\nShip crashed into asteroid");
-					mCamera.mWorld.SetTranslate(area.get_translation());
+			while (!node_stack.empty()) {
+				current_node = node_stack.top();
+				glm::mat4 matrix_stack_transform = matrix_stack.top()*current_node->get_transform();
+
+				if (current_node != &area) {
+					current_node->render(mCamera.GetWorldToClipMatrix(), matrix_stack_transform, default_shader, [](GLuint /*program*/) {});
+				}
+				node_stack.pop();
+				matrix_stack.pop();
+
+				for (int i = 0; i < current_node->get_children_nb(); i++) {
+					Node const* child = current_node->get_child(i);
+					matrix_stack.push(matrix_stack_transform);
+					node_stack.push(child);
 				}
 
-				// asteroid - area
-				if (!testCollison(asteroid_pos, max_radius, area.get_translation(), area_radius)) {
-					printf("\nAsteroid crashed into surroundings");
-					//What to do? mCamera.mWorld.SetTranslate(area.get_translation());
-				}
-
-				// asteroid - other asteroid
-				for (int j = i + 1; j < nbr_asteroids; j++) {
-					if (testCollison(asteroid[i].get_translation(), max_radius, asteroid[j].get_translation(), max_radius)) {
-						printf("\nAsteroid crashed into asteroid");
-						//What to do? mCamera.mWorld.SetTranslate(area.get_translation());
-					}
-				}
-				asteroid[i].render(mCamera.GetWorldToClipMatrix(), asteroid[i].get_transform(), default_shader, [](GLuint /*program*/) {});
 			}
-
-
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-			//
-			// Todo: If you want a custom ImGUI window, you can set it up
-			//       here
-			//
-
-			if (show_logs)
-				Log::View::Render();
-			if (show_gui)
-				ImGui::Render();
-
-			glfwSwapBuffers(window);
-			lastTime = nowTime;
 		}
+
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		//
+		// Todo: If you want a custom ImGUI window, you can set it up
+		//       here
+		//
+
+		if (show_logs)
+			Log::View::Render();
+		if (show_gui)
+			ImGui::Render();
+
+		glfwSwapBuffers(window);
+		lastTime = nowTime;
 	}
 }
 
