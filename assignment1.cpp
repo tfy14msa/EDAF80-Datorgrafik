@@ -195,6 +195,7 @@ int main()
 		input_handler.SetUICapture(io.WantCaptureMouse, io.WantCaptureKeyboard);
 		input_handler.Advance();
 		camera.Update(delta_time, input_handler);
+		
 
 		if (input_handler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;

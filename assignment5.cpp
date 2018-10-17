@@ -58,30 +58,38 @@ bool testCollison(glm::vec3 p1, float r1, glm::vec3 p2, float r2)
 	return psum < r1 + r2;
 }
 
-Node createAsteroid(Node area, unsigned int area_radius, unsigned int max_radius) {
-
-	auto asteroid = Node();
-	
-	int x = rand(), y = rand(), z = rand();
-	x = x % (2 * area_radius) - area_radius,
-		y = y % (2 * area_radius) - area_radius,
-		z = z % (2 * area_radius) - area_radius;
+glm::vec3 areaCoordinates(unsigned int area_radius, unsigned int object_radius) {
+	int x = 0, y = 0, z = 0, xlim = area_radius - object_radius;
+	x = rand() % (2 * xlim) - xlim;
+	int ylim = xlim - abs(x);
+	y = rand() % (2 * ylim) - ylim;
+	int zlim = ylim - abs(y);
+	z = rand() % (2 * zlim) - zlim;
+	return glm::vec3(x, y, z);
 	/*float x = -area_radius + rand() % (2*area_radius);
 	float y = -area_radius + rand() % (2*area_radius);
 	float z = -area_radius + rand() % (2*area_radius );*/
 
-	auto init_pos = glm::vec3(x, y, z);
-	asteroid.set_translation(init_pos);
+}
+
+Node createAsteroid(Node area, unsigned int area_radius, unsigned int max_radius) {
+
+	auto asteroid = Node();
 
 	int radius = rand() % max_radius;
+
+	auto init_pos = areaCoordinates(area_radius, radius);
+	asteroid.set_translation(init_pos);
+
 	auto const asteroid_shape = parametric_shapes::createSphere(300.0f, 300.0f, radius);
 	if (asteroid_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
 	}
 	asteroid.set_geometry(asteroid_shape);
 
+
 	GLuint const asteroid_texture = bonobo::loadTexture2D("venusmap.png");
-	asteroid.add_texture("diffuse", asteroid_texture, GL_PROXY_TEXTURE_2D);
+	asteroid.add_texture("diffuse_texture", asteroid_texture, GL_TEXTURE_2D);
 	return asteroid;
 }
 
@@ -94,7 +102,8 @@ void
 edaf80::Assignment5::run()
 {
 
-
+	// seed random function
+	srand((unsigned int)time(NULL));
 	// Set up the camera
 	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.0f));
 	mCamera.mMouseSensitivity = 0.003f;
@@ -330,6 +339,29 @@ edaf80::Assignment5::run()
 			printf("\n You suck!! \n Ship crashed");
 			//break;
 			mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.0f));
+		}
+
+		std::stack<Node const*> node_stack({ &area });
+		std::stack<glm::mat4> matrix_stack({ glm::mat4(1.0f) });
+
+		Node const* current_node = &area;
+
+		while (!node_stack.empty()) {
+			current_node = node_stack.top();
+			glm::mat4 matrix_stack_transform = matrix_stack.top()*current_node->get_transform();
+
+			if (current_node != &area && testCollison(ship_position, tr_sides, current_node->get_translation(), )) {
+				
+			}
+			node_stack.pop();
+			matrix_stack.pop();
+
+			for (int i = 0; i < current_node->get_children_nb(); i++) {
+				Node const* child = current_node->get_child(i);
+				matrix_stack.push(matrix_stack_transform);
+				node_stack.push(child);
+			}
+
 		}
 
 
