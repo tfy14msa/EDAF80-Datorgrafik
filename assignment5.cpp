@@ -1,5 +1,6 @@
 #include "assignment5.hpp"
 
+
 #include "config.hpp"
 #include "core/Bonobo.h"
 #include "core/FPSCamera.h"
@@ -16,6 +17,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "glm/ext.hpp"
+#include <stdexcept>
+#include <array>
 
 #include <stack>
 #include <cstdlib>
@@ -25,11 +28,11 @@
 #include <tinyfiledialogs.h>
 
 
+#include "assignment2.hpp"
+#include "interpolation.hpp"
+#include "parametric_shapes.hpp"
 
 
-
-
-#include <stdexcept>
 
 edaf80::Assignment5::Assignment5() :
 	mCamera(0.5f * glm::half_pi<float>(),
@@ -180,7 +183,7 @@ edaf80::Assignment5::run()
 	// Todo: Load your geometry
 	//
 	// Create the triangle
-	float tr_sides = 20.0f;
+	float tr_sides = 5.0f;
 	auto ship = Node();
 	auto const triangle_shape = //parametric_shapes::createSphere(100.0f, 100.0f, 5.0f);
 		parametric_shapes::createTriangle(tr_sides, tr_sides, 100.0f);
@@ -214,10 +217,11 @@ edaf80::Assignment5::run()
 
 	ship.set_geometry(triangle_shape);
 	//ship.set_geometry(spaceship);
-	ship.set_program(&fallback_shader, set_uniforms);
+	
 
 	ship.rotate_x(glm::two_pi<float>() / 4.0f);
 	ship.rotate_y(glm::two_pi<float>() / 2.0f);
+
 	auto area = Node();
 	area.set_geometry(sphere_shape);
 
@@ -234,10 +238,10 @@ edaf80::Assignment5::run()
 	GLuint const ripple_texture = bonobo::loadTexture2D("waves.png");
 	area.add_texture("my_ripple", ripple_texture, GL_TEXTURE_2D);
 
-	glActiveTexture(GL_TEXTURE1);
+	//glActiveTexture(GL_TEXTURE1);
 	GLuint const ship_texture = bonobo::loadTexture2D("SWtie.png");
 	ship.add_texture("diffuse", ship_texture, GL_TEXTURE_2D);
-
+	ship.set_program(&default_shader, set_uniforms);
 
 
 	float ttime = 0.0f;
@@ -247,22 +251,33 @@ edaf80::Assignment5::run()
 		glUniform1f(glGetUniformLocation(program, "ttime"), ttime);
 	};
 
-	ship.set_program(&fallback_shader, set_uniforms);
+
 	area.set_program(&skybox_shader, set_uniforms);
 
-	int max_radius = 50u;
+	int max_radius = 20u;
 	int const max_asteroids = 20;
-	int nbr_asteroids =2;
+	int nbr_asteroids =5;
 	Node asteroid [max_asteroids];
 	//int asteroid_radius[max_asteroids];
+	std::array<glm::vec3, 10> control_points[max_asteroids];
 	for (int i = 0; i < nbr_asteroids; i++) {
 	asteroid[i] = createAsteroid(area, area_radius, max_radius, asteroid, i);
+	
+	auto ctrl_pts = std::array<glm::vec3, 10>{};
+	ctrl_pts[0] = asteroid[i].get_translation();
+	for (int j = 1; j < 10; j++) {
+		ctrl_pts[j] = areaCoordinates(area_radius, max_radius);
+	}
+	control_points[i] = ctrl_pts;
 	}
 
-
-
-
-
+	
+	unsigned int num_points = control_points[0].size();
+	unsigned int point_index = 0;
+	unsigned int next_int_point = 0;
+	float velocity = 2 / area_radius;
+	float interpolation_step = 0.0f;
+	float catmull_rom_tension = 0.5f;
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -280,6 +295,9 @@ edaf80::Assignment5::run()
 	bool show_logs = true;
 	bool show_gui = true;
 	bool shader_reload_failed = false;
+
+	float pi_half = glm::half_pi<float>();
+	float pi = glm::pi<float>();
 
 	while (!glfwWindowShouldClose(window)) {
 		nowTime = GetTimeMilliseconds();
@@ -344,10 +362,10 @@ edaf80::Assignment5::run()
 
 
 
-		float anglex = mCamera.mRotation.x + 1.57; // The angle of the rotation is always 90 degrees. Minus/plus from direction. 
+		float anglex = mCamera.mRotation.x + pi_half; // The angle of the rotation is always 90 degrees. Minus/plus from direction. 
 		float cosvalx = std::cos(anglex);
 		float sinvalx = std::sin(anglex);
-		float angley = mCamera.mRotation.y - 1.57;
+		float angley = mCamera.mRotation.y - pi_half;
 		float cosvaly = std::cos(angley);
 		float sinvaly = std::sin(angley);
 
@@ -361,8 +379,7 @@ edaf80::Assignment5::run()
 		//float x = camera_position.x - 31.0f*(cosvalx); // Minus due to using z and x axis. 
 		//float z = camera_position.z + 31.0f*(sinvalx);
 
-		float pi_half = glm::half_pi<float>();
-		float pi = glm::pi<float>();
+	
 
 		//ship.set_translation(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
 		auto ship_position = glm::vec3(x, y - 9.0f, z + tr_sides / 16.0f);
@@ -370,6 +387,25 @@ edaf80::Assignment5::run()
 		ship.set_rotation_x(-mCamera.mRotation.y + pi_half);
 		//mCamera.mWorld.LookAt(glm::vec3(camera_position.x, camera_position.y, camera_position.z - 31.0f));
 		ship.set_rotation_y(mCamera.mRotation.x + pi);
+
+		//move asteroids
+
+		interpolation_step += velocity;
+		int point_index = floor(interpolation_step);
+
+
+		for (int i = 0; i < nbr_asteroids; i++) {
+			
+		asteroid[i].set_translation(interpolation::evalCatmullRom(control_points[i][(point_index + num_points - 1) % num_points], control_points[i][point_index% num_points],
+			control_points[i][(point_index + 1) % num_points], control_points[i][(point_index + 2) % num_points], catmull_rom_tension, interpolation_step - point_index));
+	}
+			if (point_index >= num_points) {
+				point_index = 0;
+
+			}
+
+
+
 
 		//test collisions
 		//ship-area
