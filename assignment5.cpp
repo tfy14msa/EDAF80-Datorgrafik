@@ -66,9 +66,18 @@ bool testCollison(glm::vec3 p1, float r1, glm::vec3 p2, float r2)
 glm::vec3 areaCoordinates(unsigned int area_radius, unsigned int object_radius) {
 	int x = 0, y = 0, z = 0, xlim = area_radius - object_radius;
 	x = rand() % (2 * xlim) - xlim;
-	int ylim = xlim - abs(x);
-	y = rand() % (2 * ylim) - ylim;
-	int zlim = ylim - abs(y);
+	/*printf("%d\n", floor(sqrt(area_radius *area_radius - x*x)));*/
+	int ylim = floor(sqrt(area_radius *area_radius - x*x)) - object_radius;
+	//int ylim = xlim - abs(x);
+	if (ylim == 0) {
+		y = 0;
+	}
+	else {
+		y = rand() % (2 * ylim) - ylim;
+	}
+	
+	//int zlim = ylim - abs(y);
+	int zlim = floor(sqrt(area_radius*area_radius - x*x - y*y)) - object_radius;
 	if (zlim == 0) {
 		z = 0;
 	}
@@ -255,8 +264,8 @@ edaf80::Assignment5::run()
 	area.set_program(&skybox_shader, set_uniforms);
 
 	int max_radius = 20u;
-	int const max_asteroids = 20;
-	int nbr_asteroids =5;
+	int const max_asteroids = 50;
+	int nbr_asteroids = 50;
 	Node asteroid [max_asteroids];
 	//int asteroid_radius[max_asteroids];
 	std::array<glm::vec3, 10> control_points[max_asteroids];
@@ -397,7 +406,9 @@ edaf80::Assignment5::run()
 		for (int i = 0; i < nbr_asteroids; i++) {
 			
 		asteroid[i].set_translation(interpolation::evalCatmullRom(control_points[i][(point_index + num_points - 1) % num_points], control_points[i][point_index% num_points],
-			control_points[i][(point_index + 1) % num_points], control_points[i][(point_index + 2) % num_points], catmull_rom_tension, interpolation_step - point_index));
+			control_points[i][(point_index + 1) % num_points], control_points[i][(point_index + 2) % num_points], catmull_rom_tension, interpolation_step - point_index)); 
+			/*asteroid[i].set_translation(interpolation::evalLERP( control_points[i][point_index% num_points],
+				control_points[i][(point_index + 1) % num_points], interpolation_step - point_index));*/
 	}
 			if (point_index >= num_points) {
 				point_index = 0;
@@ -464,7 +475,21 @@ edaf80::Assignment5::run()
 				for (int j = i + 1; j < nbr_asteroids; j++) {
 					if (testCollison(asteroid[i].get_translation(), max_radius, asteroid[j].get_translation(), max_radius)) {
 						printf("\nAsteroid crashed into asteroid");
-						//What to do? mCamera.mWorld.SetTranslate(area.get_translation());
+						/*asteroid[i] = Node();
+						control_points[i] = std::array<glm::vec3, 10>{};
+						asteroid[i] = createAsteroid(area, area_radius, max_radius, asteroid, i);
+
+						auto ctrl_pts = std::array<glm::vec3, 10>{};
+						ctrl_pts[0] = asteroid[i].get_translation();
+						for (int j = 1; j < 10; j++) {
+							ctrl_pts[j] = areaCoordinates(area_radius, max_radius);
+						}
+						control_points[i] = ctrl_pts;*/
+						nbr_asteroids--;
+						if (i != nbr_asteroids) {
+							asteroid[i] = asteroid[nbr_asteroids];
+							control_points[i] = control_points[nbr_asteroids];
+						}
 					}
 				}
 				asteroid[i].render(mCamera.GetWorldToClipMatrix(), asteroid[i].get_transform(), default_shader, [](GLuint /*program*/) {});
