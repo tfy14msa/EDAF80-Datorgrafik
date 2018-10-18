@@ -300,7 +300,7 @@ edaf80::Assignment3::run()
 		//circle_ring.rotate_y(200 * ddeltatime);
 		//circle_ring.render(mCamera.GetWorldToClipMatrix(), circle_ring.get_transform(),skybox_shader,cube_set_uniforms);
 		circle_ring.render(mCamera.GetWorldToClipMatrix(), circle_ring.get_transform());
-		bool opened = ImGui::Begin("Scene Control", &opened, ImVec2(300, 100), -1.0f, 0);
+		bool opened = ImGui::Begin("Scene Control", nullptr, ImVec2(300, 100), -1.0f, 0);
 		if (opened) {
 			ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient));
 			ImGui::ColorEdit3("Diffuse", glm::value_ptr(diffuse));
@@ -310,7 +310,7 @@ edaf80::Assignment3::run()
 		}
 		ImGui::End();
 
-		ImGui::Begin("Render Time", &opened, ImVec2(120, 50), -1.0f, 0);
+		opened = ImGui::Begin("Render Time", nullptr, ImVec2(120, 50), -1.0f, 0);
 		if (opened)
 			ImGui::Text("%.3f ms", ddeltatime);
 		ImGui::End();

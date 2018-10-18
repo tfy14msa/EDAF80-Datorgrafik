@@ -37,7 +37,7 @@
 edaf80::Assignment5::Assignment5() :
 	mCamera(0.5f * glm::half_pi<float>(),
 	        static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
-	        0.01f, 1000.0f),
+	        0.01f, 10000.0f),
 	inputHandler(), mWindowManager(), window(nullptr)
 {
 	Log::View::Init();
@@ -200,7 +200,7 @@ edaf80::Assignment5::run()
 		LogError("Failed to retrieve the quad mesh");
 		return;
 	}
-	float area_radius = 500.0f;
+	float area_radius = 1000.0f;
 	auto const sphere_shape = parametric_shapes::createSphere(300.0f, 300.0f, area_radius);
 	if (sphere_shape.vao == 0u) {
 		LogError("Failed to retrieve the sphere mesh");
@@ -264,12 +264,13 @@ edaf80::Assignment5::run()
 	area.set_program(&skybox_shader, set_uniforms);
 
 	int max_radius = 20u;
-	int const max_asteroids = 50;
-	int nbr_asteroids = 50;
+	int const max_asteroids = 40;
+	int nbr_asteroids = 5;
+	int crashes = 0;
 	Node asteroid [max_asteroids];
 	//int asteroid_radius[max_asteroids];
 	std::array<glm::vec3, 10> control_points[max_asteroids];
-	for (int i = 0; i < nbr_asteroids; i++) {
+	for (int i = 0; i < max_asteroids; i++) {
 	asteroid[i] = createAsteroid(area, area_radius, max_radius, asteroid, i);
 	
 	auto ctrl_pts = std::array<glm::vec3, 10>{};
@@ -279,7 +280,6 @@ edaf80::Assignment5::run()
 	}
 	control_points[i] = ctrl_pts;
 	}
-
 	
 	unsigned int num_points = control_points[0].size();
 	unsigned int point_index = 0;
@@ -340,6 +340,7 @@ edaf80::Assignment5::run()
 			show_logs = !show_logs;
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
 			show_gui = !show_gui;
+	
 		if (inputHandler.GetKeycodeState(GLFW_KEY_R) & JUST_PRESSED) {
 			shader_reload_failed = !program_manager.ReloadAllPrograms();
 			if (shader_reload_failed)
@@ -421,7 +422,8 @@ edaf80::Assignment5::run()
 		//test collisions
 		//ship-area
 		if (!testCollison(ship_position, tr_sides, area.get_translation(), area_radius)) {
-			printf("\nShip crashed into surroundings");
+			LogInfo("Ship crashed into surroundings");
+			crashes++;
 			mCamera.mWorld.SetTranslate(area.get_translation());
 		}
 		/*//ship-asteroids
@@ -461,20 +463,22 @@ edaf80::Assignment5::run()
 
 				// ship - asteroid
 				if (testCollison(ship_position, tr_sides, asteroid_pos, max_radius)) {
-					printf("\nShip crashed into asteroid");
+					LogInfo("Ship crashed into asteroid");
+					crashes++;
 					mCamera.mWorld.SetTranslate(area.get_translation());
 				}
 
 				// asteroid - area
 				if (!testCollison(asteroid_pos, max_radius, area.get_translation(), area_radius)) {
-					printf("\nAsteroid crashed into surroundings");
+					LogInfo("Asteroid crashed into surroundings");
 					//What to do? mCamera.mWorld.SetTranslate(area.get_translation());
+					nbr_asteroids--;
 				}
 
 				// asteroid - other asteroid
 				for (int j = i + 1; j < nbr_asteroids; j++) {
 					if (testCollison(asteroid[i].get_translation(), max_radius, asteroid[j].get_translation(), max_radius)) {
-						printf("\nAsteroid crashed into asteroid");
+						LogInfo("Asteroid crashed into asteroid");
 						/*asteroid[i] = Node();
 						control_points[i] = std::array<glm::vec3, 10>{};
 						asteroid[i] = createAsteroid(area, area_radius, max_radius, asteroid, i);
@@ -486,13 +490,10 @@ edaf80::Assignment5::run()
 						}
 						control_points[i] = ctrl_pts;*/
 						nbr_asteroids--;
-						if (i != nbr_asteroids) {
-							asteroid[i] = asteroid[nbr_asteroids];
-							control_points[i] = control_points[nbr_asteroids];
-						}
 					}
 				}
 				asteroid[i].render(mCamera.GetWorldToClipMatrix(), asteroid[i].get_transform(), default_shader, [](GLuint /*program*/) {});
+
 			}
 
 
@@ -502,6 +503,21 @@ edaf80::Assignment5::run()
 			// Todo: If you want a custom ImGUI window, you can set it up
 			//       here
 			//
+
+			bool opened = ImGui::Begin("Scene Control", nullptr, ImVec2(300, 50), -1.0f, 0);
+			if (opened) {
+				//ImGui::ColorEdit3("Ambient", glm::value_ptr(ambient));
+				//ImGui::ColorEdit3("Diffuse", glm::value_ptr(diffuse));
+				//ImGui::ColorEdit3("Specular", glm::value_ptr(specular));
+				//ImGui::SliderFloat("Shininess", &shininess, 0.0f, 1000.0f);
+				ImGui::SliderInt("Num Asteriods", &nbr_asteroids, 0, max_asteroids);
+			} 
+			ImGui::End();
+
+			opened = ImGui::Begin("Stats", nullptr, ImVec2(180, 70), -1.0f, 0);
+			if (opened)
+				ImGui::Text("Crashes: %d.\nAstroids left: %d", crashes, nbr_asteroids);
+			ImGui::End();
 
 			if (show_logs)
 				Log::View::Render();
