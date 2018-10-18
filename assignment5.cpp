@@ -192,7 +192,7 @@ edaf80::Assignment5::run()
 	// Todo: Load your geometry
 	//
 	// Create the triangle
-	float tr_sides = 5.0f;
+	float tr_sides = 20.0f;
 	auto ship = Node();
 	auto const triangle_shape = //parametric_shapes::createSphere(100.0f, 100.0f, 5.0f);
 		parametric_shapes::createTriangle(tr_sides, tr_sides, 100.0f);
@@ -263,20 +263,21 @@ edaf80::Assignment5::run()
 
 	area.set_program(&skybox_shader, set_uniforms);
 
-	int max_radius = 20u;
+	int max_radius = 30u;
 	int const max_asteroids = 40;
 	int nbr_asteroids = 5;
 	int crashes = 0;
+	float interpolation_padding = area_radius / 16.0f;
 	Node asteroid [max_asteroids];
 	//int asteroid_radius[max_asteroids];
 	std::array<glm::vec3, 10> control_points[max_asteroids];
 	for (int i = 0; i < max_asteroids; i++) {
-	asteroid[i] = createAsteroid(area, area_radius, max_radius, asteroid, i);
+	asteroid[i] = createAsteroid(area, area_radius-interpolation_padding, max_radius, asteroid, i);
 	
 	auto ctrl_pts = std::array<glm::vec3, 10>{};
 	ctrl_pts[0] = asteroid[i].get_translation();
 	for (int j = 1; j < 10; j++) {
-		ctrl_pts[j] = areaCoordinates(area_radius, max_radius);
+		ctrl_pts[j] = areaCoordinates(area_radius-interpolation_padding, max_radius);
 	}
 	control_points[i] = ctrl_pts;
 	}
